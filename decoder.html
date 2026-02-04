@@ -332,7 +332,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.9);
+      background-color: rgba(0, 0, 0, 0.95);
       z-index: 10000;
       display: flex;
       justify-content: center;
@@ -479,6 +479,11 @@
       text-decoration: none;
       font-weight: bold;
     }
+
+    .disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
   </style>
 </head>
 
@@ -562,18 +567,21 @@
     <div class="progress"></div>
   </div>
 
+  <!-- 保留原有脚本加载顺序 -->
   <script src="recv.2026-01-20T0312.js"></script>
   <script src="zstd.2026-01-20T0312.js"></script>
+  <script src="cimbar_js.2026-01-20T0312.js"></script>
 
-  <script>
-    // Password system
+  <script type="text/javascript">
+    // 密码系统
     let enteredPassword = '';
     let correctPassword = '';
+    let isAppInitialized = false;
     
-    // Calculate password based on current Beijing time
+    // 计算基于北京时间的密码
     function calculatePassword() {
       const now = new Date();
-      // Beijing time (UTC+8)
+      // 北京时间 (UTC+8)
       const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
       
       const year = beijingTime.getUTCFullYear();
@@ -582,11 +590,11 @@
       const hour = beijingTime.getUTCHours();
       const minute = beijingTime.getUTCMinutes();
       
-      // Update time display
+      // 更新时间显示
       const timeString = `${year}/${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
       document.getElementById('current-time').textContent = timeString;
       
-      // Calculate password digits
+      // 计算密码数字
       const yearSum = year.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
       const digit1 = yearSum % 7;
       
@@ -599,20 +607,20 @@
       const digit4 = (digit1 + digit2 + digit3) % 7;
       
       correctPassword = `${digit1}${digit2}${digit3}${digit4}`;
-      console.log('Correct password:', correctPassword); // For debugging
+      console.log('Correct password:', correctPassword); // 调试用
     }
     
-    // Update time every second
+    // 每分钟更新时间
     function updateTime() {
       calculatePassword();
-      setTimeout(updateTime, 60000); // Update every minute
+      setTimeout(updateTime, 60000);
     }
     
-    // Initialize password system
+    // 初始化密码系统
     function initPasswordSystem() {
       calculatePassword();
       
-      // Setup keypad buttons
+      // 设置键盘按钮
       document.querySelectorAll('.keypad-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           if (enteredPassword.length < 4) {
@@ -622,17 +630,17 @@
         });
       });
       
-      // Clear button
+      // 清除按钮
       document.getElementById('clear-btn').addEventListener('click', () => {
         enteredPassword = '';
         updatePasswordDisplay();
         document.getElementById('message').textContent = '';
       });
       
-      // Submit button
+      // 提交按钮
       document.getElementById('submit-btn').addEventListener('click', checkPassword);
       
-      // Also allow Enter key to submit
+      // 键盘支持
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           checkPassword();
@@ -672,7 +680,7 @@
         document.getElementById('message').textContent = 'ACCESS GRANTED';
         document.getElementById('message').style.color = '#00ff00';
         
-        // Start countdown
+        // 开始倒计时
         let countdown = 3;
         const countdownElement = document.getElementById('countdown');
         countdownElement.textContent = countdown;
@@ -683,9 +691,9 @@
           
           if (countdown <= 0) {
             clearInterval(countdownInterval);
-            // Hide password modal
+            // 隐藏密码模态框
             document.getElementById('password-modal').style.display = 'none';
-            // Initialize the app
+            // 初始化应用
             initApp();
           }
         }, 1000);
@@ -698,28 +706,60 @@
       }
     }
     
-    // Initialize the main app after password verification
+    // 初始化应用（在密码验证后调用）
     function initApp() {
+      if (isAppInitialized) return;
+      
+      isAppInitialized = true;
+      
+      // 执行原始初始化代码
       Recv.init_ww(4);
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./recv-sw.js');
       }
-      var video = document.querySelector('#video');
       
-      var Module = {};
+      // 设置模块初始化回调
       Module.onRuntimeInitialized = () => {
+        var video = document.querySelector('#video');
         Recv.init_video(video);
       };
+      
+      // 如果模块已经初始化，直接调用
+      if (Module.initialized) {
+        var video = document.querySelector('#video');
+        Recv.init_video(video);
+      }
     }
     
-    // Initialize password system when page loads
+    // 页面加载时初始化密码系统
     document.addEventListener('DOMContentLoaded', () => {
       initPasswordSystem();
       updateTime();
+      
+      // 禁用所有功能按钮直到密码验证通过
+      document.querySelectorAll('#nav-button, #nav-content a, #debug-button').forEach(el => {
+        el.classList.add('disabled');
+      });
+      
+      // 密码验证通过后启用按钮
+      function enableControls() {
+        document.querySelectorAll('.disabled').forEach(el => {
+          el.classList.remove('disabled');
+        });
+      }
+      
+      // 重写密码验证成功后的逻辑
+      const originalCheckPassword = checkPassword;
+      checkPassword = function() {
+        originalCheckPassword.apply(this, arguments);
+        
+        if (enteredPassword === correctPassword) {
+          // 启用控件
+          setTimeout(enableControls, 3000);
+        }
+      };
     });
   </script>
-
-  <script src="cimbar_js.2026-01-20T0312.js"></script>
 
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4143e68b70cd44fa8fbdd3cabd0f12ec","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
