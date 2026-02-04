@@ -22,17 +22,18 @@
     }
 
     body {
-      background-color: white;
+      background-color: #000000;
       background-image: linear-gradient(135deg, rgb(0, 0, 0) 65px, transparent 130px),
-        repeating-linear-gradient(135deg, rgb(0, 0, 0) 0px, rgb(153, 197, 206) 1px, transparent 1px, transparent 30px),
-        repeating-linear-gradient(45deg, rgb(0, 0, 0) 0px, rgb(153, 197, 206) 1px, transparent 1px, transparent 30px);
+        repeating-linear-gradient(135deg, rgb(0, 0, 0) 0px, rgb(255, 165, 0) 1px, transparent 1px, transparent 30px),
+        repeating-linear-gradient(45deg, rgb(0, 0, 0) 0px, rgb(255, 165, 0) 1px, transparent 1px, transparent 30px);
       background-size: cover;
+      color: #ffa500;
     }
 
     @media (prefers-color-scheme: dark) {
       body {
-        background-color: black;
-        color: white;
+        background-color: #000000;
+        color: #ffa500;
       }
     }
 
@@ -56,8 +57,8 @@
     }
 
     .statusbox {
-      color: white;
-      text-shadow: 1px 1px 1px green;
+      color: #ffa500;
+      text-shadow: 1px 1px 1px #000000;
     }
 
     #progress_bars {
@@ -72,25 +73,25 @@
       display: block;
       height: 1.2vh;
       margin-bottom: 1vh;
-      background-color: white;
-      border-top: 0.2vh inset navy;
-      border-bottom: 0.4vh inset navy;
-      border-right: 0.3vh inset navy;
+      background-color: #ffa500;
+      border-top: 0.2vh inset #b37400;
+      border-bottom: 0.4vh inset #b37400;
+      border-right: 0.3vh inset #b37400;
       border-radius: 0 0.5vh 0.5vh 0;
       max-width: 100%;
       width: 0;
     }
 
     .crosshairs {
-      border-color: white !important;
+      border-color: #ffa500 !important;
     }
 
     .crosshairs.scanning_xhairs {
-      border-color: #FFFF00 !important;
+      border-color: #ffcc00 !important;
     }
 
     .crosshairs.active_xhairs {
-      border-color: #00FF00 !important;
+      border-color: #00ff00 !important;
     }
 
     #crosshair1 {
@@ -102,7 +103,7 @@
       z-index: -50;
       border-right: 5px groove;
       border-top: 5px groove;
-      box-shadow: inset 0 0 0 4px #555,
+      box-shadow: inset 0 0 0 4px #333;
     }
 
     #crosshair2 {
@@ -114,7 +115,7 @@
       z-index: -50;
       border-left: 5px groove;
       border-bottom: 5px groove;
-      box-shadow: inset 0 0 0 4px #555,
+      box-shadow: inset 0 0 0 4px #333;
     }
 
     #nav-container:focus-within {
@@ -130,12 +131,12 @@
     /* options */
     #nav-container a.mode-auto,
     #nav-container a.mode-b {
-      color: #555;
+      color: #666;
     }
 
     #nav-container.mode-auto a.mode-auto,
     #nav-container.mode-b a.mode-b {
-      color: #9fa6b2;
+      color: #ffa500;
     }
 
     /* nav stuff */
@@ -157,12 +158,12 @@
       visibility: hidden;
       opacity: 0;
       transition: .3s;
-      background: black;
+      background: #000000;
     }
 
     #nav-container:focus-within .bg {
       visibility: visible;
-      opacity: .6;
+      opacity: .8;
     }
 
     #nav-container * {
@@ -182,7 +183,7 @@
       touch-action: manipulation;
       border: 0;
       outline: 0;
-      background-image: linear-gradient(180deg, rgb(0, 0, 0, 0) 10%, rgb(0, 0, 0) 40%, rgb(0, 0, 0) 60%, rgb(0, 0, 0, 0) 90%);
+      background-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 10%, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0) 90%);
       background-color: initial;
     }
 
@@ -207,43 +208,43 @@
     }
 
     #nav-container .icon-bar:nth-of-type(1) {
-      background-color: #00ff00;
-      box-shadow: 0px 0px 5px #00ff00, 0px 0px 2px #00ff00;
+      background-color: #ffa500;
+      box-shadow: 0px 0px 5px #ffa500, 0px 0px 2px #ffa500;
     }
 
     #nav-container .icon-bar:nth-of-type(2) {
-      background-color: #ffff00;
-      box-shadow: 0px 0px 5px #ffff00, 0px 0px 2px #ffff00;
+      background-color: #ffa500;
+      box-shadow: 0px 0px 5px #ffa500, 0px 0px 2px #ffa500;
     }
 
     #nav-container .icon-bar:nth-of-type(3) {
-      background-color: #00ffff;
-      box-shadow: 0px 0px 5px #00ffff, 0px 0px 2px #00ffff;
+      background-color: #ffa500;
+      box-shadow: 0px 0px 5px #ffa500, 0px 0px 2px #ffa500;
     }
 
     #nav-container .icon-bar:nth-of-type(4) {
-      background-color: #ff00ff;
-      box-shadow: 0px 0px 5px #ff00ff, 0px 0px 2px #ff00ff;
+      background-color: #ffa500;
+      box-shadow: 0px 0px 5px #ffa500, 0px 0px 2px #ffa500;
     }
 
     #nav-container.mode-4c .icon-bar:nth-of-type(1) {
-      background-color: #00ffff;
-      box-shadow: 0px 0px 5px #00ffff, 0px 0px 2px #00ffff;
+      background-color: #ffa500;
+      box-shadow: 0px 0px 5px #ffa500, 0px 0px 2px #ffa500;
     }
 
     #nav-container.mode-4c .icon-bar:nth-of-type(2) {
-      background-color: #ffff00;
-      box-shadow: 0px 0px 5px #ffff00, 0px 0px 2px #ffff00;
+      background-color: #ffa500;
+      box-shadow: 0px 0px 5px #ffa500, 0px 0px 2px #ffa500;
     }
 
     #nav-container.mode-4c .icon-bar:nth-of-type(3) {
-      background-color: #00ff00;
-      box-shadow: 0px 0px 5px #00ff00, 0px 0px 2px #00ff00;
+      background-color: #ffa500;
+      box-shadow: 0px 0px 5px #ffa500, 0px 0px 2px #ffa500;
     }
 
     #nav-container.mode-4c .icon-bar:nth-of-type(4) {
-      background-color: #ff00ff;
-      box-shadow: 0px 0px 5px #ff00ff, 0px 0px 2px #ff00ff;
+      background-color: #ffa500;
+      box-shadow: 0px 0px 5px #ffa500, 0px 0px 2px #ffa500;
     }
 
     #nav-container:focus-within #nav-button {
@@ -251,13 +252,13 @@
     }
 
     #nav-container:focus-within .icon-bar {
-      background-color: #aaa;
+      background-color: #ffa500;
       background-image: none !important;
       box-shadow: none !important;
     }
 
     #nav-button.attention:focus-within .icon-bar {
-      background-color: #00ffff;
+      background-color: #ffa500;
     }
 
     #nav-container:focus-within .icon-bar:nth-of-type(1) {
@@ -281,7 +282,8 @@
       left: 0;
       height: calc(100% - 60px);
       overflow-x: clip;
-      background-color: #282C34;
+      background-color: #000000;
+      border-right: 1px solid #ffa500;
       text-align: center;
       pointer-events: auto;
       -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
@@ -297,13 +299,13 @@
     }
 
     #nav-content hr {
-      border: 1px solid #444;
+      border: 1px solid #ffa500;
     }
 
     #nav-content li a {
       display: block;
       padding: 10px 5px;
-      color: #9fa6b2;
+      color: #ffa500;
       text-decoration: none;
       transition: color .1s;
     }
@@ -318,7 +320,7 @@
     }
 
     #nav-content h4 {
-      color: gray;
+      color: #ffa500;
       font-variant: small-caps;
       padding-top: 1em;
     }
@@ -329,7 +331,7 @@
     }
 
     #nav-content li:hover {
-      background-color: #2c323c;
+      background-color: #1a1a1a;
     }
 
     #nav-content li:not(.small)+.small {
@@ -361,7 +363,8 @@
       z-index: 2;
       transition: transform .3s;
       opacity: 95%;
-      background-color: black;
+      background-color: #000000;
+      border-left: 1px solid #ffa500;
     }
 
     .invisible {
@@ -370,8 +373,60 @@
 
     @keyframes glowing {
       0% {
-        color: #00ffff;
+        color: #ffa500;
       }
+      100% {
+        color: #ffcc80;
+      }
+    }
+
+    /* Home button styling */
+    #home-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      z-index: 100;
+      background-color: #000000;
+      border: 2px solid #ffa500;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    #home-button:hover {
+      background-color: #ffa500;
+      box-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
+    }
+
+    #home-button:hover .home-icon {
+      color: #000000;
+    }
+
+    .home-icon {
+      color: #ffa500;
+      font-size: 28px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    #debug-button {
+      background-color: #000000;
+      color: #ffa500;
+      border: 1px solid #ffa500;
+      padding: 5px 10px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    #debug-button:hover {
+      background-color: #ffa500;
+      color: #000000;
     }
   </style>
 
@@ -382,6 +437,11 @@
 
   <div id="crosshair1" class="crosshairs"></div>
   <div id="crosshair2" class="crosshairs"></div>
+
+  <!-- Home button -->
+  <div id="home-button" onclick="window.location.href='index.html'">
+    <div class="home-icon">⌂</div>
+  </div>
 
   <div id="nav-container" class="mode-auto">
     <div class="bg" onclick="Recv.blurNav();"></div>
@@ -400,12 +460,11 @@
         </li>
         <li class="small"><a href="javascript:void(0)" onclick="Recv.showDebug()">Debug</a></li>
         <li class="small"><a href="javascript:void(0)" onclick="Recv.toggleFullscreen()">Fullscreen</a></li>
-        <li class="small"><a href="https://github.com/sz3/libcimbar">github</a></li>
-        <li class="small"><a href="https://github.com/sz3/cfc/releases/latest">android app</a></li>
+        <!-- Removed GitHub and Android app links as requested -->
       </ul>
     </div>
     <div id="debug_menu">
-      <button id="debug-button" onclick="Recv.showDebug();"></button>
+      <button id="debug-button" onclick="Recv.showDebug();">Close Debug</button>
       <div class="statusbox" id="errorbox"></div>
       <div class="statusbox" id="t0">hi0</div>
       <div class="statusbox" id="t1">hi1</div>
