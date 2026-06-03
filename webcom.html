@@ -885,17 +885,28 @@
             return new Uint8Array(bits);
         }
 
-        async function deriveAESKey(sharedSecret, salt) {
-            const keyMaterial = await crypto.subtle.importKey('raw', sharedSecret, { name: 'HKDF' }, false, [
-                'deriveKey'
-            ]);
-            return await crypto.subtle.deriveKey({
-                name: 'HKDF',
-                hash: 'SHA-256',
-                salt: salt,
-                info: new TextEncoder().encode('secret-chat-zs-session'),
-            }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-        }
+async function deriveAESKey(sharedSecret, salt) {
+    const keyMaterial = await crypto.subtle.importKey(
+        'raw', 
+        sharedSecret, 
+        { name: 'HKDF' }, 
+        false, 
+        ['deriveKey']
+    );
+    // 将最后一个参数从 false 改为 true，允许导出密钥以计算指纹
+    return await crypto.subtle.deriveKey(
+        {
+            name: 'HKDF',
+            hash: 'SHA-256',
+            salt: salt,
+            info: new TextEncoder().encode('secret-chat-zs-session'),
+        }, 
+        keyMaterial, 
+        { name: 'AES-GCM', length: 256 }, 
+        true,   // <-- 这里改为 true
+        ['encrypt', 'decrypt']
+    );
+}
 
         async function encryptMessage(aesKey, plaintext) {
             const iv = crypto.getRandomValues(new Uint8Array(12));
