@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Chat Zero Server</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --panel: #121212;
+            --text: #ff8c00;
+            --highlight: #ffb347;
+            --glow: rgba(255, 140, 0, 0.3);
+            --scanline: rgba(255, 140, 0, 0.03);
+            --border: #ff8c00;
+            --font-mono: 'Courier New', monospace;
+            --font-sans: 'Segoe UI', system-ui, sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            min-height:100vh;
+            overflow-x:hidden;
+            position:relative;
+        }
+        body::before {
+            content:"";
+            position:fixed; top:0;left:0;width:100%;height:100%;
+            pointer-events:none;z-index:999;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+            background-repeat:repeat; opacity:0.05;
+        }
+        body::after {
+            content:"";
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            pointer-events:none;z-index:998;
+            background: repeating-linear-gradient(0deg, var(--scanline) 0px, var(--scanline) 1px, transparent 1px, transparent 3px);
+            animation: scanline-move 8s linear infinite;
+        }
+        @keyframes scanline-move { 0%{ transform:translateY(0); } 100%{ transform:translateY(4px); } }
+        .particles {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            pointer-events:none; z-index:0;
+        }
+        .particle {
+            position:absolute;
+            width:2px; height:2px;
+            background:var(--highlight);
+            border-radius:50%;
+            animation: float-up linear infinite;
+            opacity:0.6;
+        }
+        @keyframes float-up {
+            0% { transform:translateY(100vh) scale(0); opacity:0; }
+            10% { opacity:1; }
+            90% { opacity:1; }
+            100% { transform:translateY(-10vh) scale(1.5); opacity:0; }
+        }
+        .app-container {
+            position:relative; z-index:1;
+            max-width:1200px; margin:0 auto; padding:10px;
+            display:flex; flex-direction:column; height:100vh;
+        }
+        header {
+            display:flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; background: var(--panel);
+            border:1px solid var(--border);
+            clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
+            margin-bottom:10px;
+            box-shadow: 0 0 15px var(--glow);
+        }
+        .logo {
+            font-family: var(--font-mono); font-size:1.3rem;
+            text-transform: uppercase; letter-spacing: 2px;
+            color: var(--highlight); text-shadow: 0 0 10px var(--glow);
+        }
+        .lang-selector { display:flex; gap:8px; }
+        .lang-btn {
+            background:transparent; border:1px solid var(--border);
+            color:var(--text); padding:4px 12px; cursor:pointer;
+            clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%);
+            font-family: var(--font-mono); font-size:0.8rem; transition: all 0.2s;
+        }
+        .lang-btn.active, .lang-btn:hover { background:var(--highlight); color:#000; box-shadow:0 0 10px var(--glow); }
+        .identity-panel {
+            background:var(--panel); border:1px solid var(--border);
+            padding:14px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+            clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
+            margin-bottom:10px;
+        }
+        .identity-info { flex:1; font-family: var(--font-mono); }
+        .identity-name { font-size:1.1rem; color:var(--highlight); text-shadow:0 0 8px var(--glow); }
+        .fingerprint { font-size:0.85rem; color:var(--text); }
+        .btn {
+            background:transparent; border:1px solid var(--border);
+            color:var(--text); padding:8px 18px; cursor:pointer;
+            clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+            font-family: var(--font-mono); font-size:0.8rem; transition: all 0.2s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { background:var(--highlight); color:#000; box-shadow:0 0 15px var(--glow); transform:scale(1.02); }
+        .btn:active { transform:scale(0.98); }
+        .btn.primary { background:var(--highlight); color:#000; font-weight:bold; }
+        .main-content {
+            flex:1; background:var(--panel); border:1px solid var(--border);
+            padding:15px; overflow-y:auto;
+            clip-path: polygon(0 0, 100% 0, 99% 100%, 1% 100%);
+            display:flex; flex-direction:column;
+        }
+        .home-actions {
+            display:flex; gap:20px; justify-content:center; align-items:center;
+            flex-wrap:wrap; margin:auto;
+        }
+        .qr-container { text-align:center; margin:10px 0; }
+        .qr-container canvas { background:white; padding:10px; border:2px solid var(--border); }
+        .input-group { display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; }
+        .input-field {
+            flex:1; background: rgba(255,140,0,0.05); border:1px solid var(--border);
+            color:var(--text); padding:10px; font-family: var(--font-mono);
+            backdrop-filter: blur(4px);
+            clip-path: polygon(2% 0, 100% 0, 98% 100%, 0 100%);
+            min-width:200px;
+        }
+        .input-field:focus { outline:none; border-color:var(--highlight); box-shadow:0 0 10px var(--glow); }
+        .chat-area { flex:1; display:flex; flex-direction:column; }
+        .messages { flex:1; overflow-y:auto; padding:10px; font-family: var(--font-mono); }
+        .msg-bubble {
+            max-width:80%; margin:8px 0; padding:10px 14px;
+            border-radius:8px; word-break:break-word; position:relative;
+        }
+        .msg-local { background: rgba(255,140,0,0.15); border-left:3px solid var(--highlight); margin-left:auto; }
+        .msg-remote { background: rgba(0,200,200,0.1); border-right:3px solid cyan; margin-right:auto; }
+        .msg-meta { font-size:0.65rem; opacity:0.7; margin-bottom:4px; }
+        .msg-file { background:rgba(255,140,0,0.05); padding:10px; margin:5px 0; border:1px dashed var(--border); display:flex; gap:10px; align-items:center; }
+        .terminal-log {
+            background:#0a0a0a; border:1px solid var(--border); padding:8px;
+            font-family: var(--font-mono); font-size:0.7rem; height:120px;
+            overflow-y:auto; margin-top:8px; color:var(--highlight);
+            clip-path: polygon(2% 0, 100% 0, 98% 100%, 0 100%);
+        }
+        .log-entry { margin:2px 0; }
+        .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; box-shadow:0 0 8px currentColor; }
+        .dot-disconnected { background:#ff3333; color:#ff3333; }
+        .dot-connecting { background:#ffcc00; color:#ffcc00; animation: pulse 1s infinite; }
+        .dot-connected { background:#33ff33; color:#33ff33; box-shadow:0 0 12px #33ff33; }
+        @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+        @media (max-width: 768px) {
+            .identity-panel { flex-direction:column; align-items:flex-start; }
+            .home-actions { flex-direction:column; }
+        }
+    </style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+<div class="app-container">
+    <header>
+        <div class="logo">Secret Chat Zero</div>
+        <div class="lang-selector">
+            <button class="lang-btn active" data-lang="en">English</button>
+            <button class="lang-btn" data-lang="zh">中文</button>
+        </div>
+    </header>
+    <div class="identity-panel" id="identityPanel"></div>
+    <div class="main-content" id="mainContent"></div>
+    <div class="terminal-log" id="terminalLog"></div>
+</div>
+
+<script>
+// ==================== I18N ====================
+const i18n = {
+    en: {
+        identityLabel:"Identity", fingerprintLabel:"Fingerprint", copy:"Copy", newIdentity:"New Identity",
+        createChat:"Create Chat", joinChat:"Join Chat", back:"Back", generateOffer:"Generate Offer",
+        copyOffer:"Copy Offer", saveOffer:"Save Offer", generateQR:"Generate QR", pasteAnswer:"Paste Answer",
+        loadAnswer:"Load Answer File", scanQR:"Scan QR", pasteOffer:"Paste Offer", loadOffer:"Load Offer File",
+        copyAnswer:"Copy Answer", saveAnswer:"Save Answer", connecting:"Connecting...",
+        connected:"Connected", disconnected:"Disconnected", send:"Send", clearChat:"Clear Chat",
+        exportChat:"Export Chat", importChat:"Import Chat", stats:"Stats", connectionStats:"Connection Statistics",
+        rtt:"RTT", sentBytes:"Sent Bytes", recvBytes:"Recv Bytes", messages:"Messages", files:"Files",
+        duration:"Duration", sessionFingerprint:"Session Fingerprint", verify:"Verify with peer",
+        fileTransfer:"File Transfer", dropFile:"Drop file here or click", download:"Download",
+        terminalReady:"System ready.", identityLoaded:"Identity loaded", identityGenerated:"New identity generated",
+        offerCreated:"Offer created", answerCreated:"Answer created", connectionEstablished:"Connection established",
+        connectionFailed:"Connection failed", messageSent:"Message sent", fileSent:"File sent",
+        fileReceived:"File received", chatExported:"Chat exported", chatImported:"Chat imported",
+        qrScanned:"QR code scanned", scanningQR:"Scanning QR code...", noCamera:"Camera not available",
+        barcodeUnsupported:"Barcode detection not supported, use image upload"
+    },
+    zh: {
+        identityLabel:"身份", fingerprintLabel:"指纹", copy:"复制", newIdentity:"新身份",
+        createChat:"创建聊天", joinChat:"加入聊天", back:"返回", generateOffer:"生成 Offer",
+        copyOffer:"复制 Offer", saveOffer:"保存 Offer", generateQR:"生成二维码", pasteAnswer:"粘贴 Answer",
+        loadAnswer:"加载 Answer 文件", scanQR:"扫描二维码", pasteOffer:"粘贴 Offer", loadOffer:"加载 Offer 文件",
+        copyAnswer:"复制 Answer", saveAnswer:"保存 Answer", connecting:"连接中...",
+        connected:"已连接", disconnected:"未连接", send:"发送", clearChat:"清除聊天",
+        exportChat:"导出聊天", importChat:"导入聊天", stats:"统计", connectionStats:"连接统计",
+        rtt:"往返时间", sentBytes:"发送字节", recvBytes:"接收字节", messages:"消息", files:"文件",
+        duration:"持续时间", sessionFingerprint:"会话指纹", verify:"与对方核对",
+        fileTransfer:"文件传输", dropFile:"拖放文件或点击", download:"下载",
+        terminalReady:"系统就绪。", identityLoaded:"身份已加载", identityGenerated:"已生成新身份",
+        offerCreated:"Offer 已创建", answerCreated:"Answer 已创建", connectionEstablished:"连接已建立",
+        connectionFailed:"连接失败", messageSent:"消息已发送", fileSent:"文件已发送",
+        fileReceived:"文件已接收", chatExported:"聊天已导出", chatImported:"聊天已导入",
+        qrScanned:"二维码已扫描", scanningQR:"正在扫描二维码...", noCamera:"摄像头不可用",
+        barcodeUnsupported:"不支持条码检测，请使用图片上传"
+    }
+};
+
+let currentLang = 'en';
+function t(key) { return i18n[currentLang][key] || key; }
+function setLang(lang) {
+    currentLang = lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang===lang));
+    renderUI();
+}
+
+// ==================== UTILS ====================
+function logToTerminal(msg) {
+    const term = document.getElementById('terminalLog');
+    if (!term) return;
+    const now = new Date().toTimeString().slice(0,8);
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.textContent = `[${now}] ${msg}`;
+    term.appendChild(entry);
+    term.scrollTop = term.scrollHeight;
+}
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => logToTerminal(t('copy')+' OK')).catch(() => alert('Copy failed'));
+}
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data)],{type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download=filename; a.click();
+    URL.revokeObjectURL(url);
+}
+function readFileAsJSON(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => { try{ resolve(JSON.parse(e.target.result)); } catch(ex){ reject(ex); } };
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
+
+// ==================== PARTICLES ====================
+function createParticles() {
+    const container = document.getElementById('particles');
+    if (!container) return;
+    for(let i=0; i<30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random()*100+'%';
+        p.style.animationDuration = (Math.random()*10+8)+'s';
+        p.style.animationDelay = Math.random()*5+'s';
+        container.appendChild(p);
+    }
+}
+
+// ==================== CRYPTO ====================
+const CryptoHelper = {
+    async generateECDHKeyPair() {
+        return await crypto.subtle.generateKey({name:'ECDH', namedCurve:'P-256'}, true, ['deriveBits']);
+    },
+    async exportPublicKey(key) {
+        const raw = await crypto.subtle.exportKey('raw', key.publicKey);
+        return new Uint8Array(raw);
+    },
+    async importPublicKey(raw) {
+        return await crypto.subtle.importKey('raw', raw, {name:'ECDH', namedCurve:'P-256'}, true, []);
+    },
+    async deriveSharedSecret(privateKey, publicKey) {
+        const bits = await crypto.subtle.deriveBits({name:'ECDH', public:publicKey}, privateKey, 256);
+        return new Uint8Array(bits);
+    },
+    async sha256(data) {
+        return new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+    },
+    async hkdf(ikm, salt, info, length=32) {
+        const enc = new TextEncoder();
+        const saltKey = await crypto.subtle.importKey('raw', salt, {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+        const prk = await crypto.subtle.sign('HMAC', saltKey, ikm);
+        const prkKey = await crypto.subtle.importKey('raw', prk, {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+        const infoEnc = enc.encode(info);
+        let t = new Uint8Array(0), ctr = 1;
+        while(t.length < length) {
+            const input = new Uint8Array([...t, ...infoEnc, ctr]);
+            const block = new Uint8Array(await crypto.subtle.sign('HMAC', prkKey, input));
+            t = new Uint8Array([...t, ...block]);
+            ctr++;
+        }
+        return t.slice(0, length);
+    },
+    async deriveAESKey(sharedSecret) {
+        const salt = new Uint8Array(32);
+        const keyMaterial = await this.hkdf(sharedSecret, salt, 'secret-chat-zero-aes-key', 32);
+        return await crypto.subtle.importKey('raw', keyMaterial, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+    },
+    async encryptAES(key, plaintext) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ciphertext = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(plaintext));
+        const ctArray = new Uint8Array(ciphertext);
+        const result = new Uint8Array(iv.length + ctArray.length);
+        result.set(iv); result.set(ctArray, iv.length);
+        return result;
+    },
+    async decryptAES(key, data) {
+        const iv = data.slice(0,12), ct = data.slice(12);
+        const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+        return new TextDecoder().decode(plain);
+    },
+    async fingerprintFromPublicKey(pubRaw) {
+        const hash = await this.sha256(pubRaw);
+        const hex = Array.from(hash.slice(0,6)).map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join('');
+        return hex.match(/.{4}/g).join('-');
+    },
+    async sessionFingerprint(sharedSecret) {
+        const hash = await this.sha256(sharedSecret);
+        const hex = Array.from(hash.slice(0,6)).map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join('');
+        return hex.match(/.{4}/g).join('-');
+    }
+};
+
+// ==================== IDENTITY MANAGER ====================
+const IdentityManager = {
+    adjectives: ['Shadow','Cyber','Ghost','Dark','Neon','Stealth','Crypto','Zero','Phantom','Digital','Silent','Quantum','Omega','Alpha','Nova'],
+    animals: ['Fox','Tiger','Wolf','Hawk','Raven','Cobra','Viper','Panther','Eagle','Shark','Falcon','Lynx','Owl','Dragon','Scorpion'],
+    generateName() {
+        const adj = this.adjectives[Math.floor(Math.random()*this.adjectives.length)];
+        const ani = this.animals[Math.floor(Math.random()*this.animals.length)];
+        const suffix = Math.random().toString(16).slice(2,6).toUpperCase();
+        return `${adj}${ani}-${suffix}`;
+    },
+    async loadOrCreate() {
+        let stored = localStorage.getItem('scz_identity');
+        if(stored) {
+            try {
+                const data = JSON.parse(stored);
+                const privKey = await crypto.subtle.importKey('jwk', data.privateKeyJWK, {name:'ECDH', namedCurve:'P-256'}, true, ['deriveBits']);
+                const pubKey = await crypto.subtle.importKey('jwk', data.publicKeyJWK, {name:'ECDH', namedCurve:'P-256'}, true, []);
+                const pubRaw = await CryptoHelper.exportPublicKey({publicKey:pubKey});
+                const fp = await CryptoHelper.fingerprintFromPublicKey(pubRaw);
+                logToTerminal(t('identityLoaded'));
+                return { identity: data.identity, keyPair: { privateKey: privKey, publicKey: pubKey }, fingerprint: fp };
+            } catch(e){}
+        }
+        return await this.generateNew();
+    },
+    async generateNew() {
+        const keyPair = await CryptoHelper.generateECDHKeyPair();
+        const pubRaw = await CryptoHelper.exportPublicKey(keyPair);
+        const fp = await CryptoHelper.fingerprintFromPublicKey(pubRaw);
+        const identity = this.generateName();
+        const jwkPriv = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
+        const jwkPub = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+        localStorage.setItem('scz_identity', JSON.stringify({identity, publicKeyJWK: jwkPub, privateKeyJWK: jwkPriv}));
+        logToTerminal(t('identityGenerated'));
+        return { identity, keyPair, fingerprint: fp };
+    }
+};
+
+// ==================== QR GENERATOR ====================
+const QRGenerator = (function(){
+    const QR_MODE_BYTE = 4, QR_ECLEVEL_M = 0;
+    function createQR(text, canvas) {
+        if (!canvas) return;
+        const qr = new QRCode(-1, QR_ECLEVEL_M);
+        qr.addData(text, QR_MODE_BYTE);
+        qr.make();
+        const size = qr.getModuleCount();
+        canvas.width = canvas.height = size * 4 + 20;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = 'black';
+        for (let row=0; row<size; row++) for (let col=0; col<size; col++) {
+            if (qr.isDark(row, col)) ctx.fillRect(col*4+10, row*4+10, 4, 4);
+        }
+    }
+    function QRCode(typeNumber, errorCorrectLevel) {
+        this.typeNumber = typeNumber; this.errorCorrectLevel = errorCorrectLevel;
+        this.modules = null; this.moduleCount = 0; this.dataCache = null; this.dataList = [];
+    }
+    QRCode.prototype = {
+        addData: function(data, mode) { this.dataList.push(new QR8bitByte(data)); this.dataCache = null; },
+        isDark: function(row, col) { return this.modules[row][col]; },
+        getModuleCount: function() { return this.moduleCount; },
+        make: function() {
+            if (this.typeNumber <= 0) {
+                let len = 0; for (let i=0; i<this.dataList.length; i++) len += this.dataList[i].getLength();
+                for (let t=1; t<=40; t++) {
+                    let blocks = QRRSBlock.getRSBlocks(t, QR_ECLEVEL_M), total=0;
+                    for (let b of blocks) total += b.dataCount;
+                    if (len <= total) { this.typeNumber = t; break; }
+                }
+                if (this.typeNumber <= 0) this.typeNumber = 40;
+            }
+            this.makeImpl(false, this.getBestMaskPattern());
+        },
+        makeImpl: function(test, maskPattern) {
+            this.moduleCount = this.typeNumber * 4 + 17;
+            this.modules = new Array(this.moduleCount);
+            for (let row=0; row<this.moduleCount; row++) { this.modules[row] = new Array(this.moduleCount).fill(null); }
+            this.setupPositionProbePattern(0,0);
+            this.setupPositionProbePattern(this.moduleCount-7,0);
+            this.setupPositionProbePattern(0,this.moduleCount-7);
+            this.setupPositionAdjustPattern();
+            this.setupTimingPattern();
+            this.setupTypeInfo(test, maskPattern);
+            if (this.typeNumber >= 7) this.setupTypeNumber(test);
+            const data = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+            this.mapData(data, maskPattern);
+        },
+        setupPositionProbePattern: function(row, col) {
+            for (let r=-1; r<=7; r++) for (let c=-1; c<=7; c++) {
+                if (row+r<=-1 || this.moduleCount<=row+r || col+c<=-1 || this.moduleCount<=col+c) continue;
+                if ((0<=r&&r<=6&&(c==0||c==6)) || (0<=c&&c<=6&&(r==0||r==6)) || (2<=r&&r<=4&&2<=c&&c<=4))
+                    this.modules[row+r][col+c] = true;
+                else this.modules[row+r][col+c] = false;
+            }
+        },
+        getBestMaskPattern: function() { let min=0, pat=0; for (let i=0;i<8;i++){ this.makeImpl(true,i); let lp=QRUtil.getLostPoint(this); if(i==0||min>lp){min=lp;pat=i;} } return pat; },
+        setupTimingPattern: function() {
+            for (let r=8; r<this.moduleCount-8; r++) if (this.modules[r][6]==null) this.modules[r][6] = (r%2==0);
+            for (let c=8; c<this.moduleCount-8; c++) if (this.modules[6][c]==null) this.modules[6][c] = (c%2==0);
+        },
+        setupPositionAdjustPattern: function() {
+            const pos = QRUtil.getPatternPosition(this.typeNumber);
+            for (let i=0; i<pos.length; i++) for (let j=0; j<pos.length; j++) {
+                let row=pos[i], col=pos[j]; if (this.modules[row][col]!=null) continue;
+                for (let r=-2; r<=2; r++) for (let c=-2; c<=2; c++) {
+                    if (r==-2||r==2||c==-2||c==2||(r==0&&c==0)) this.modules[row+r][col+c] = true;
+                    else this.modules[row+r][col+c] = false;
+                }
+            }
+        },
+        setupTypeNumber: function(test) {
+            const bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+            for (let i=0; i<18; i++) { let mod = (!test && ((bits>>i)&1)==1); this.modules[Math.floor(i/3)][i%3+this.moduleCount-8-3] = mod; }
+            for (let i=0; i<18; i++) { let mod = (!test && ((bits>>i)&1)==1); this.modules[i%3+this.moduleCount-8-3][Math.floor(i/3)] = mod; }
+        },
+        setupTypeInfo: function(test, maskPattern) {
+            const data = (this.errorCorrectLevel<<3)|maskPattern, bits = QRUtil.getBCHTypeInfo(data);
+            for (let i=0; i<15; i++) {
+                let mod = (!test && ((bits>>i)&1)==1);
+                if(i<6) this.modules[i][8]=mod; else if(i<8) this.modules[i+1][8]=mod; else this.modules[this.moduleCount-15+i][8]=mod;
+            }
+            for (let i=0; i<15; i++) {
+                let mod = (!test && ((bits>>i)&1)==1);
+                if(i<8) this.modules[8][this.moduleCount-i-1]=mod; else if(i<9) this.modules[8][15-i-1+1]=mod; else this.modules[8][15-i-1]=mod;
+            }
+            this.modules[this.moduleCount-8][8] = (!test);
+        },
+        mapData: function(data, maskPattern) {
+            let inc=-1, row=this.moduleCount-1, bitIndex=7, byteIndex=0;
+            for (let col=this.moduleCount-1; col>0; col-=2) {
+                if (col==6) col--;
+                while(true) {
+                    for (let c=0; c<2; c++) {
+                        if (this.modules[row][col-c]==null) {
+                            let dark=false;
+                            if (byteIndex<data.length) dark = ((data[byteIndex]>>>bitIndex)&1)==1;
+                            let mask = QRUtil.getMask(maskPattern, row, col-c);
+                            if (mask) dark = !dark;
+                            this.modules[row][col-c] = dark;
+                            if (--bitIndex == -1) { byteIndex++; bitIndex=7; }
+                        }
+                    }
+                    row += inc;
+                    if (row<0 || this.moduleCount<=row) { row -= inc; inc = -inc; break; }
+                }
+            }
+        }
+    };
+    QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+        const rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+        const buffer = new QRBitBuffer();
+        for (let d of dataList) { buffer.put(d.mode,4); buffer.put(d.getLength(), QRUtil.getLengthInBits(d.mode, typeNumber)); d.write(buffer); }
+        let totalDataCount = 0; for (let b of rsBlocks) totalDataCount += b.dataCount;
+        if (buffer.getLengthInBits() > totalDataCount*8) throw new Error("overflow");
+        if (buffer.getLengthInBits()+4 <= totalDataCount*8) buffer.put(0,4);
+        while (buffer.getLengthInBits()%8!=0) buffer.putBit(false);
+        while (true) { if (buffer.getLengthInBits()>=totalDataCount*8) break; buffer.put(0xEC,8); if(buffer.getLengthInBits()>=totalDataCount*8) break; buffer.put(0x11,8); }
+        return QRCode.createBytes(buffer, rsBlocks);
+    };
+    QRCode.createBytes = function(buffer, rsBlocks) {
+        let offset=0, maxDcCount=0, maxEcCount=0;
+        const dcdata=new Array(rsBlocks.length), ecdata=new Array(rsBlocks.length);
+        for (let r=0; r<rsBlocks.length; r++) {
+            let dcCount=rsBlocks[r].dataCount, ecCount=rsBlocks[r].totalCount-dcCount;
+            maxDcCount=Math.max(maxDcCount,dcCount); maxEcCount=Math.max(maxEcCount,ecCount);
+            dcdata[r]=new Array(dcCount); for (let i=0;i<dcCount;i++) dcdata[r][i]=0xff&buffer.buffer[i+offset];
+            offset+=dcCount;
+            const rsPoly=QRUtil.getErrorCorrectPolynomial(ecCount), rawPoly=new QRPolynomial(dcdata[r],rsPoly.getLength()-1);
+            const modPoly=rawPoly.mod(rsPoly); ecdata[r]=new Array(rsPoly.getLength()-1);
+            for (let i=0; i<ecdata[r].length; i++) { let idx=i+modPoly.getLength()-ecdata[r].length; ecdata[r][i]=idx>=0?modPoly.getAt(idx):0; }
+        }
+        let totalCodeCount=0; for (let b of rsBlocks) totalCodeCount+=b.totalCount;
+        const result=new Array(totalCodeCount); let index=0;
+        for (let i=0;i<maxDcCount;i++) for (let r=0;r<rsBlocks.length;r++) if(i<dcdata[r].length) result[index++]=dcdata[r][i];
+        for (let i=0;i<maxEcCount;i++) for (let r=0;r<rsBlocks.length;r++) if(i<ecdata[r].length) result[index++]=ecdata[r][i];
+        return result;
+    };
+    function QR8bitByte(data) { this.mode=QR_MODE_BYTE; this.data=data; }
+    QR8bitByte.prototype = {
+        getLength: function() { return this.data.length; },
+        write: function(buffer) { for (let i=0; i<this.data.length; i++) buffer.put(this.data.charCodeAt(i),8); }
+    };
+    function QRBitBuffer() { this.buffer=[]; this.length=0; }
+    QRBitBuffer.prototype = {
+        getAt: function(index) { const bufIdx=Math.floor(index/8); return ((this.buffer[bufIdx]>>>(7-index%8))&1)==1; },
+        put: function(num, length) { for(let i=0;i<length;i++) this.putBit(((num>>>(length-i-1))&1)==1); },
+        putBit: function(bit) { const bufIdx=Math.floor(this.length/8); if(this.buffer.length<=bufIdx) this.buffer.push(0); if(bit) this.buffer[bufIdx]|=(0x80>>>(this.length%8)); this.length++; },
+        getLengthInBits: function() { return this.length; }
+    };
+    const QRUtil = {
+        PATTERN_POSITION_TABLE: [ [],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170] ],
+        getPatternPosition: function(typeNumber) { return this.PATTERN_POSITION_TABLE[typeNumber-1]; },
+        G15: (1<<10)|(1<<8)|(1<<5)|(1<<4)|(1<<2)|(1<<1)|(1<<0), G15_MASK: (1<<14)|(1<<12)|(1<<10)|(1<<4)|(1<<1),
+        G18: (1<<12)|(1<<11)|(1<<10)|(1<<9)|(1<<8)|(1<<5)|(1<<2)|(1<<0),
+        getBCHDigit: function(data) { let d=0; while(data!=0){d++;data>>>=1;} return d; },
+        getBCHTypeInfo: function(data) {
+            let d = data<<10;
+            while(this.getBCHDigit(d)-this.getBCHDigit(this.G15)>=0) d ^= (this.G15<<(this.getBCHDigit(d)-this.getBCHDigit(this.G15)));
+            return ((data<<10)|d)^this.G15_MASK;
+        },
+        getBCHTypeNumber: function(data) {
+            let d = data<<12;
+            while(this.getBCHDigit(d)-this.getBCHDigit(this.G18)>=0) d ^= (this.G18<<(this.getBCHDigit(d)-this.getBCHDigit(this.G18)));
+            return (data<<12)|d;
+        },
+        getLengthInBits: function(mode, type) { return (type<=9)?8:16; },
+        getLostPoint: function(qrCode) {
+            const mc = qrCode.getModuleCount(); let lp = 0;
+            for (let r=0; r<mc; r++) for (let c=0; c<mc; c++) {
+                let same=0; const dark=qrCode.isDark(r,c);
+                for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) { if(r+dr<0||mc<=r+dr||c+dc<0||mc<=c+dc||(dr==0&&dc==0)) continue; if(dark==qrCode.isDark(r+dr,c+dc)) same++; }
+                if(same>5) lp += (3+same-5);
+            }
+            for (let r=0; r<mc-1; r++) for (let c=0; c<mc-1; c++) {
+                let cnt=0; if(qrCode.isDark(r,c))cnt++; if(qrCode.isDark(r+1,c))cnt++; if(qrCode.isDark(r,c+1))cnt++; if(qrCode.isDark(r+1,c+1))cnt++;
+                if(cnt==0||cnt==4) lp+=3;
+            }
+            for (let r=0; r<mc; r++) for (let c=0; c<mc-6; c++) if(qrCode.isDark(r,c)&&!qrCode.isDark(r,c+1)&&qrCode.isDark(r,c+2)&&qrCode.isDark(r,c+3)&&qrCode.isDark(r,c+4)&&!qrCode.isDark(r,c+5)&&qrCode.isDark(r,c+6)) lp+=40;
+            for (let c=0; c<mc; c++) for (let r=0; r<mc-6; r++) if(qrCode.isDark(r,c)&&!qrCode.isDark(r+1,c)&&qrCode.isDark(r+2,c)&&qrCode.isDark(r+3,c)&&qrCode.isDark(r+4,c)&&!qrCode.isDark(r+5,c)&&qrCode.isDark(r+6,c)) lp+=40;
+            let darkCnt=0; for(let r=0;r<mc;r++) for(let c=0;c<mc;c++) if(qrCode.isDark(r,c)) darkCnt++;
+            let pct = darkCnt*100/(mc*mc); lp += Math.abs(Math.floor(pct/5)-10)*10;
+            return lp;
+        },
+        getMask: function(maskPat, i, j) {
+            switch(maskPat){ case 0:return (i+j)%2==0; case 1:return i%2==0; case 2:return j%3==0; case 3:return (i+j)%3==0; case 4:return (Math.floor(i/2)+Math.floor(j/3))%2==0; case 5:return (i*j)%2+(i*j)%3==0; case 6:return ((i*j)%2+(i*j)%3)%2==0; case 7:return ((i+j)%2+(i*j)%3)%2==0; }
+        },
+        getErrorCorrectPolynomial: function(len) { let a=new QRPolynomial([1],0); for(let i=0;i<len;i++) a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0)); return a; }
+    };
+    function QRPolynomial(num, shift) {
+        let offset=0; while(offset<num.length&&num[offset]==0) offset++;
+        this.num = new Array(num.length-offset+shift); for(let i=0;i<num.length-offset;i++) this.num[i]=num[i+offset];
+    }
+    QRPolynomial.prototype = {
+        getAt: function(idx){ return this.num[idx]; }, getLength: function(){ return this.num.length; },
+        multiply: function(e){
+            const num=new Array(this.getLength()+e.getLength()-1);
+            for(let i=0;i<this.getLength();i++) for(let j=0;j<e.getLength();j++) num[i+j]^=QRMath.gexp(QRMath.glog(this.getAt(i))+QRMath.glog(e.getAt(j)));
+            return new QRPolynomial(num,0);
+        },
+        mod: function(e){
+            if(this.getLength()-e.getLength()<0) return this;
+            const ratio=QRMath.glog(this.getAt(0))-QRMath.glog(e.getAt(0));
+            const num=new Array(this.getLength()); for(let i=0;i<this.getLength();i++) num[i]=this.getAt(i);
+            for(let i=0;i<e.getLength();i++) num[i]^=QRMath.gexp(QRMath.glog(e.getAt(i))+ratio);
+            return new QRPolynomial(num,0).mod(e);
+        }
+    };
+    const QRMath = (function(){
+        const exp = new Array(256), log = new Array(256);
+        for(let i=0;i<8;i++) exp[i]=1<<i;
+        for(let i=8;i<256;i++) exp[i]=exp[i-4]^exp[i-5]^exp[i-6]^exp[i-8];
+        for(let i=0;i<255;i++) log[exp[i]]=i;
+        return { glog: n => log[n], gexp: n => { while(n<0)n+=255; while(n>=256)n-=255; return exp[n]; } };
+    })();
+    function QRRSBlock(totalCount, dataCount) { this.totalCount=totalCount; this.dataCount=dataCount; }
+    QRRSBlock.getRSBlocks = function(typeNumber, ecLevel) {
+        const table = QRRSBlock.RS_BLOCK_TABLE;
+        const idx = (typeNumber-1)*4 + 0;
+        const arr = table[idx];
+        if(!arr) throw "bad";
+        const list=[];
+        for(let i=0;i<arr.length;i+=3){ const cnt=arr[i], total=arr[i+1], data=arr[i+2]; for(let j=0;j<cnt;j++) list.push(new QRRSBlock(total,data)); }
+        return list;
+    };
+    QRRSBlock.RS_BLOCK_TABLE = [
+        [1,26,19],[1,26,16],[1,26,13],[1,26,9], [1,44,34],[1,44,28],[1,44,22],[1,44,16],
+        [1,70,55],[1,70,44],[2,35,17],[2,35,13], [1,100,80],[2,50,32],[2,50,24],[4,25,9],
+        [1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12], [2,86,68],[4,43,27],[4,43,19],[4,43,15],
+        [2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14], [2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],
+        [2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13], [2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],
+        [4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13], [2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],
+        [4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12], [3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],
+        [5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13], [5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],
+        [1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15], [5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],
+        [3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14], [3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],
+        [4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17], [2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],
+        [4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16], [6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],
+        [8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16], [10,146,116,2,147,117],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],
+        [8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16], [3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],
+        [7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16], [5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],
+        [13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16], [17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],
+        [17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16], [13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],
+        [12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16], [6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],
+        [17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16], [4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],
+        [20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16], [19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]
+    ];
+    return { createQR };
+})();
+
+// ==================== QR SCANNER ====================
+const QRScanner = {
+    async scanFromCamera(videoEl, timeout=30000) {
+        if (!('BarcodeDetector' in window)) { logToTerminal(t('barcodeUnsupported')); return null; }
+        const detector = new BarcodeDetector({formats:['qr_code']});
+        const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+        videoEl.srcObject = stream;
+        await videoEl.play();
+        logToTerminal(t('scanningQR'));
+        const start = Date.now();
+        while (Date.now()-start < timeout) {
+            try {
+                const barcodes = await detector.detect(videoEl);
+                if (barcodes.length>0) { stream.getTracks().forEach(t=>t.stop()); videoEl.srcObject=null; return barcodes[0].rawValue; }
+            } catch(e) {}
+            await new Promise(r=>setTimeout(r,100));
+        }
+        stream.getTracks().forEach(t=>t.stop()); videoEl.srcObject=null;
+        return null;
+    },
+    async scanFromImage(file) {
+        if (!('BarcodeDetector' in window)) throw new Error(t('barcodeUnsupported'));
+        const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); });
+        const detector = new BarcodeDetector({formats:['qr_code']});
+        const barcodes = await detector.detect(img);
+        URL.revokeObjectURL(img.src);
+        return barcodes.length>0 ? barcodes[0].rawValue : null;
+    }
+};
+
+// ==================== WEBRTC MANAGER (FIXED) ====================
+const WebRTCManager = {
+    peerConnection: null, dataChannel: null,
+    localEphemeralKeyPair: null, remoteEphemeralPublicKey: null,
+    sharedSecret: null, aesKey: null, sessionFingerprint: null,
+    onMessage: null, onStatusChange: null, onStats: null,
+    stats: { rtt:0, sentBytes:0, recvBytes:0, messages:0, files:0, startTime:0 },
+    async createOffer() {
+        this.close();
+        const pc = new RTCPeerConnection({iceServers:[]});
+        this.peerConnection = pc;
+        pc.oniceconnectionstatechange = () => { if(this.onStatusChange) this.onStatusChange(pc.iceConnectionState); };
+        const dc = pc.createDataChannel('secret', {ordered:true});
+        this.setupDataChannel(dc);
+        this.localEphemeralKeyPair = await CryptoHelper.generateECDHKeyPair();
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await new Promise((resolve) => {
+            if (pc.iceGatheringState === 'complete') resolve();
+            else { const t=setTimeout(resolve,15000); pc.onicegatheringstatechange = () => { if(pc.iceGatheringState==='complete'){ clearTimeout(t); resolve(); } }; }
+        });
+        return { version:'1.0', type:'offer', sdp:pc.localDescription.sdp, senderIdentity: currentIdentity.identity, senderFingerprint: currentIdentity.fingerprint, timestamp: Date.now() };
+    },
+    async applyOffer(offerData) {
+        this.close();
+        const pc = new RTCPeerConnection({iceServers:[]});
+        this.peerConnection = pc;
+        pc.oniceconnectionstatechange = () => { if(this.onStatusChange) this.onStatusChange(pc.iceConnectionState); };
+        pc.ondatachannel = (event) => this.setupDataChannel(event.channel);
+        this.localEphemeralKeyPair = await CryptoHelper.generateECDHKeyPair();
+        await pc.setRemoteDescription(new RTCSessionDescription({type:'offer', sdp:offerData.sdp}));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await new Promise(resolve => {
+            if(pc.iceGatheringState==='complete') resolve();
+            else { const t=setTimeout(resolve,15000); pc.onicegatheringstatechange = ()=>{ if(pc.iceGatheringState==='complete'){ clearTimeout(t); resolve(); } }; }
+        });
+        return { version:'1.0', type:'answer', sdp:pc.localDescription.sdp, senderIdentity: currentIdentity.identity, senderFingerprint: currentIdentity.fingerprint, timestamp: Date.now() };
+    },
+    async applyAnswer(answerData) {
+        await this.peerConnection.setRemoteDescription(new RTCSessionDescription({type:'answer', sdp:answerData.sdp}));
+    },
+    setupDataChannel(dc) {
+        this.dataChannel = dc;
+        dc.onopen = async () => {
+            this.stats.startTime = Date.now();
+            if (this.localEphemeralKeyPair) {
+                const pubBytes = await CryptoHelper.exportPublicKey(this.localEphemeralKeyPair);
+                dc.send(JSON.stringify({type:'ephemeral-key', key: Array.from(pubBytes)}));
+            }
+            // ★ 关键修复：DataChannel 打开时主动通知“已连接”，确保加入端跳转
+            if (this.onStatusChange) this.onStatusChange('connected');
+        };
+        dc.onmessage = async (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'ephemeral-key') {
+                    const remotePub = new Uint8Array(msg.key);
+                    this.remoteEphemeralPublicKey = await CryptoHelper.importPublicKey(remotePub);
+                    if (!this.localEphemeralKeyPair) throw new Error('Missing local ephemeral key pair');
+                    this.sharedSecret = await CryptoHelper.deriveSharedSecret(this.localEphemeralKeyPair.privateKey, this.remoteEphemeralPublicKey);
+                    this.aesKey = await CryptoHelper.deriveAESKey(this.sharedSecret);
+                    this.sessionFingerprint = await CryptoHelper.sessionFingerprint(this.sharedSecret);
+                    if (this.onMessage) this.onMessage({type:'session-established', fingerprint:this.sessionFingerprint});
+                } else if (msg.type === 'encrypted') {
+                    if (!this.aesKey) return;
+                    const cipherBytes = new Uint8Array(atob(msg.data).split('').map(c=>c.charCodeAt(0)));
+                    const plain = await CryptoHelper.decryptAES(this.aesKey, cipherBytes);
+                    const inner = JSON.parse(plain);
+                    if (this.onMessage) this.onMessage(inner);
+                    this.stats.messages++; this.stats.recvBytes += event.data.length;
+                }
+            } catch(e) { logToTerminal('Decrypt error: '+e); }
+        };
+        dc.onclose = () => { if(this.onStatusChange) this.onStatusChange('disconnected'); };
+        setInterval(()=>this.updateStats(), 1000);
+    },
+    async sendEncrypted(payloadObj) {
+        if (!this.dataChannel || this.dataChannel.readyState!=='open' || !this.aesKey) return false;
+        const plain = JSON.stringify(payloadObj);
+        const cipher = await CryptoHelper.encryptAES(this.aesKey, plain);
+        const b64 = btoa(String.fromCharCode(...cipher));
+        this.dataChannel.send(JSON.stringify({type:'encrypted', data:b64}));
+        this.stats.sentBytes += b64.length;
+        return true;
+    },
+    close() {
+        if(this.dataChannel) { this.dataChannel.close(); this.dataChannel=null; }
+        if(this.peerConnection) { this.peerConnection.close(); this.peerConnection=null; }
+        this.aesKey=null; this.sharedSecret=null; this.sessionFingerprint=null;
+        this.localEphemeralKeyPair=null; this.remoteEphemeralPublicKey=null;
+    },
+    async updateStats() {
+        if(!this.peerConnection) return;
+        try {
+            const stats = await this.peerConnection.getStats();
+            stats.forEach(report => { if(report.type==='candidate-pair' && report.state==='succeeded') this.stats.rtt = Math.round(report.currentRoundTripTime*1000); });
+        } catch(e) {}
+        if(this.onStats) this.onStats(this.stats);
+    }
+};
+
+// ==================== FILE TRANSFER ====================
+const FileTransferManager = {
+    CHUNK_SIZE: 65536,
+    async sendFile(file, dcSendFn, onProgress) {
+        const arrayBuffer = await file.arrayBuffer();
+        const totalChunks = Math.ceil(arrayBuffer.byteLength / this.CHUNK_SIZE);
+        const fileId = crypto.randomUUID();
+        await dcSendFn({type:'file-meta', fileId, fileName:file.name, fileSize:file.size, mimeType:file.type, totalChunks});
+        for (let i=0; i<totalChunks; i++) {
+            const start = i*this.CHUNK_SIZE, end = Math.min(start+this.CHUNK_SIZE, arrayBuffer.byteLength);
+            const chunk = arrayBuffer.slice(start, end);
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(chunk)));
+            await dcSendFn({type:'file-chunk', fileId, index:i, data:base64});
+            if (onProgress) onProgress({sent:i+1, total:totalChunks, fileName:file.name});
+            await new Promise(r=>setTimeout(r,10));
+        }
+        await dcSendFn({type:'file-complete', fileId, fileName:file.name});
+    },
+    receivers: new Map(),
+    handleFileMessage(msg, onFileProgress, onFileComplete) {
+        switch(msg.type) {
+            case 'file-meta':
+                const receiver = { fileName:msg.fileName, fileSize:msg.fileSize, mimeType:msg.mimeType, totalChunks:msg.totalChunks, chunks:new Array(msg.totalChunks), received:0 };
+                this.receivers.set(msg.fileId, receiver);
+                if(onFileProgress) onFileProgress({received:0, total:msg.totalChunks, fileName:msg.fileName});
+                break;
+            case 'file-chunk':
+                const recv = this.receivers.get(msg.fileId); if(!recv) return;
+                const bytes = Uint8Array.from(atob(msg.data), c=>c.charCodeAt(0));
+                recv.chunks[msg.index] = bytes; recv.received++;
+                if(onFileProgress) onFileProgress({received:recv.received, total:recv.totalChunks, fileName:recv.fileName});
+                break;
+            case 'file-complete':
+                const recv2 = this.receivers.get(msg.fileId); if(!recv2) return;
+                const totalLen = recv2.chunks.reduce((s,c)=>s+c.byteLength, 0);
+                const combined = new Uint8Array(totalLen); let off=0;
+                for(const c of recv2.chunks) { combined.set(c,off); off+=c.byteLength; }
+                const blob = new Blob([combined],{type:recv2.mimeType});
+                const url = URL.createObjectURL(blob);
+                if(onFileComplete) onFileComplete({fileName:recv2.fileName, fileSize:recv2.fileSize, url, mimeType:recv2.mimeType});
+                this.receivers.delete(msg.fileId);
+                break;
+        }
+    }
+};
+
+// ==================== CHAT MANAGER ====================
+const ChatManager = {
+    messages: [],
+    addMessage(msg) { this.messages.push(msg); },
+    clear() { this.messages = []; },
+    exportChat() { return { version:'1.0', exportTime:Date.now(), participants:{local:currentIdentity.identity, remote:remoteIdentity||''}, sessionFingerprint:WebRTCManager.sessionFingerprint, messages:this.messages }; },
+    importChat(data) { this.messages = data.messages || []; }
+};
+
+let currentIdentity = null;
+let remoteIdentity = '';
+let currentView = 'home';
+
+// ==================== UI RENDERER ====================
+function renderUI() {
+    renderIdentity();
+    renderMainContent();
+    updateStatusDot(WebRTCManager.peerConnection ? WebRTCManager.peerConnection.iceConnectionState : 'disconnected');
+}
+function renderIdentity() {
+    if (!currentIdentity) return;
+    const panel = document.getElementById('identityPanel');
+    if (!panel) return;
+    panel.innerHTML = `
+        <div class="identity-info">
+            <div><span style="opacity:0.7">${t('identityLabel')}:</span> <span class="identity-name">${currentIdentity.identity}</span></div>
+            <div><span style="opacity:0.7">${t('fingerprintLabel')}:</span> <span class="fingerprint">${currentIdentity.fingerprint}</span></div>
+        </div>
+        <button class="btn" onclick="copyIdentity()">${t('copy')}</button>
+        <button class="btn" onclick="generateNewIdentity()">${t('newIdentity')}</button>
+    `;
+}
+function copyIdentity() {
+    const text = `${t('identityLabel')}: ${currentIdentity.identity}\n${t('fingerprintLabel')}: ${currentIdentity.fingerprint}`;
+    copyToClipboard(text);
+}
+async function generateNewIdentity() {
+    currentIdentity = await IdentityManager.generateNew();
+    renderUI();
+}
+function renderMainContent() {
+    const main = document.getElementById('mainContent');
+    if (!main) return;
+    if (currentView==='home') renderHome(main);
+    else if (currentView==='create') renderCreate(main);
+    else if (currentView==='join') renderJoin(main);
+    else if (currentView==='chat') renderChat(main);
+}
+function renderHome(container) {
+    container.innerHTML = `
+        <div class="home-actions">
+            <button class="btn primary" onclick="goToCreate()">${t('createChat')}</button>
+            <button class="btn primary" onclick="goToJoin()">${t('joinChat')}</button>
+        </div>
+        <div id="statusIndicator" style="margin-top:20px;text-align:center;font-family:monospace;">
+            <span class="status-dot dot-disconnected"></span> ${t('disconnected')}
+        </div>
+    `;
+}
+function goToCreate() { currentView='create'; renderUI(); }
+function goToJoin() { currentView='join'; renderUI(); }
+function goHome() { WebRTCManager.close(); currentView='home'; renderUI(); }
+
+async function renderCreate(container) {
+    container.innerHTML = `
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <button class="btn" onclick="goHome()">${t('back')}</button>
+            <button class="btn primary" id="genOfferBtn">${t('generateOffer')}</button>
+        </div>
+        <div id="offerArea" style="display:none;">
+            <textarea id="offerText" class="input-field" rows="6" readonly></textarea>
+            <div class="input-group">
+                <button class="btn" onclick="copyOffer()">${t('copyOffer')}</button>
+                <button class="btn" onclick="saveOffer()">${t('saveOffer')}</button>
+                <button class="btn" onclick="generateOfferQR()">${t('generateQR')}</button>
+            </div>
+            <div class="qr-container" id="offerQR"></div>
+            <hr style="border-color:var(--border);margin:16px 0;">
+            <div><strong>${t('pasteAnswer')}:</strong></div>
+            <textarea id="answerPaste" class="input-field" rows="3" placeholder='...'></textarea>
+            <div class="input-group">
+                <button class="btn" onclick="pasteAnswer()">${t('pasteAnswer')}</button>
+                <button class="btn" onclick="loadAnswerFile()">${t('loadAnswer')}</button>
+                <button class="btn" onclick="scanAnswerQR()">${t('scanQR')}</button>
+            </div>
+        </div>
+    `;
+    document.getElementById('genOfferBtn').addEventListener('click', async ()=>{
+        const offer = await WebRTCManager.createOffer();
+        document.getElementById('offerText').value = JSON.stringify(offer);
+        document.getElementById('offerArea').style.display='block';
+        logToTerminal(t('offerCreated'));
+    });
+}
+function copyOffer() { copyToClipboard(document.getElementById('offerText').value); }
+function saveOffer() { downloadJSON(JSON.parse(document.getElementById('offerText').value), 'offer.secretchat'); }
+function generateOfferQR() {
+    const text = document.getElementById('offerText').value;
+    const container = document.getElementById('offerQR'); container.innerHTML='<canvas></canvas>';
+    QRGenerator.createQR(text, container.querySelector('canvas'));
+}
+async function pasteAnswer() {
+    const textArea = document.getElementById('answerPaste');
+    if (!textArea) return;
+    const text = textArea.value.trim();
+    if(!text) { logToTerminal('Error: empty Answer'); return; }
+    try {
+        const answer = JSON.parse(text);
+        await WebRTCManager.applyAnswer(answer);
+        remoteIdentity = answer.senderIdentity;
+        // ★ 设置状态回调以更新指示灯
+        WebRTCManager.onStatusChange = (state) => { updateStatusDot(state); };
+        currentView='chat'; renderUI();
+        logToTerminal(t('connectionEstablished'));
+    } catch(e) { logToTerminal('Error applying answer: '+e); }
+}
+function loadAnswerFile() {
+    const input = document.createElement('input'); input.type='file'; input.accept='.secretchat';
+    input.onchange = async (e) => {
+        const file = e.target.files[0]; if(!file) return;
+        const data = await readFileAsJSON(file);
+        await WebRTCManager.applyAnswer(data);
+        remoteIdentity = data.senderIdentity;
+        WebRTCManager.onStatusChange = (state) => { updateStatusDot(state); };
+        currentView='chat'; renderUI();
+        logToTerminal(t('connectionEstablished'));
+    };
+    input.click();
+}
+async function scanAnswerQR() {
+    const video = document.createElement('video'); video.style.display='none'; document.body.appendChild(video);
+    const result = await QRScanner.scanFromCamera(video);
+    document.body.removeChild(video);
+    if(result) {
+        const answer = JSON.parse(result);
+        await WebRTCManager.applyAnswer(answer);
+        remoteIdentity = answer.senderIdentity;
+        WebRTCManager.onStatusChange = (state) => { updateStatusDot(state); };
+        currentView='chat'; renderUI();
+        logToTerminal(t('qrScanned')+' - '+t('connectionEstablished'));
+    }
+}
+
+function renderJoin(container) {
+    container.innerHTML = `
+        <button class="btn" onclick="goHome()">${t('back')}</button>
+        <div><strong>${t('pasteOffer')}:</strong></div>
+        <textarea id="offerPaste" class="input-field" rows="3"></textarea>
+        <div class="input-group">
+            <button class="btn" onclick="pasteOffer()">${t('pasteOffer')}</button>
+            <button class="btn" onclick="loadOfferFile()">${t('loadOffer')}</button>
+            <button class="btn" onclick="scanOfferQR()">${t('scanQR')}</button>
+        </div>
+        <div id="answerArea" style="display:none;">
+            <textarea id="answerText" class="input-field" rows="6" readonly></textarea>
+            <div class="input-group">
+                <button class="btn" onclick="copyAnswer()">${t('copyAnswer')}</button>
+                <button class="btn" onclick="saveAnswer()">${t('saveAnswer')}</button>
+                <button class="btn" onclick="generateAnswerQR()">${t('generateQR')}</button>
+            </div>
+            <div class="qr-container" id="answerQR"></div>
+        </div>
+    `;
+}
+async function pasteOffer() {
+    const offerField = document.getElementById('offerPaste');
+    if (!offerField) {
+        logToTerminal('Error: Not in Join Chat page. Please go back and enter Join Chat again.');
+        return;
+    }
+    const text = offerField.value.trim();
+    if (!text) {
+        logToTerminal('Error: Offer text is empty.');
+        return;
+    }
+    let offer;
+    try { offer = JSON.parse(text); } catch (e) { logToTerminal('Error: Invalid JSON - '+e); return; }
+    remoteIdentity = offer.senderIdentity || '';
+    try {
+        const answer = await WebRTCManager.applyOffer(offer);
+        let answerTextEl = document.getElementById('answerText');
+        let answerAreaEl = document.getElementById('answerArea');
+        if (!answerAreaEl || !answerTextEl) {
+            currentView = 'join'; renderUI();
+            answerTextEl = document.getElementById('answerText');
+            answerAreaEl = document.getElementById('answerArea');
+            const offerFieldNew = document.getElementById('offerPaste');
+            if (offerFieldNew) offerFieldNew.value = text;
+            if (!answerTextEl) { logToTerminal('Error: Cannot display answer area.'); return; }
+        }
+        answerTextEl.value = JSON.stringify(answer, null, 2);
+        answerAreaEl.style.display = 'block';
+        logToTerminal(t('answerCreated'));
+        WebRTCManager.onStatusChange = (state) => {
+            if (state === 'connected' || state === 'completed') { currentView = 'chat'; renderUI(); }
+        };
+    } catch(e) { logToTerminal('Error applying offer: '+e); }
+}
+function loadOfferFile() {
+    const input = document.createElement('input'); input.type='file'; input.accept='.secretchat';
+    input.onchange = async (e) => {
+        const file = e.target.files[0]; if(!file) return;
+        const offer = await readFileAsJSON(file);
+        remoteIdentity = offer.senderIdentity;
+        const answer = await WebRTCManager.applyOffer(offer);
+        document.getElementById('answerText').value = JSON.stringify(answer, null, 2);
+        document.getElementById('answerArea').style.display='block';
+        logToTerminal(t('answerCreated'));
+        WebRTCManager.onStatusChange = (state) => { if(state==='connected'||state==='completed') { currentView='chat'; renderUI(); } };
+    };
+    input.click();
+}
+async function scanOfferQR() {
+    const video = document.createElement('video'); video.style.display='none'; document.body.appendChild(video);
+    const result = await QRScanner.scanFromCamera(video);
+    document.body.removeChild(video);
+    if(result) {
+        const offer = JSON.parse(result);
+        remoteIdentity = offer.senderIdentity;
+        const answer = await WebRTCManager.applyOffer(offer);
+        document.getElementById('answerText').value = JSON.stringify(answer, null, 2);
+        document.getElementById('answerArea').style.display='block';
+        logToTerminal(t('qrScanned')+' - '+t('answerCreated'));
+        WebRTCManager.onStatusChange = (state) => { if(state==='connected'||state==='completed') { currentView='chat'; renderUI(); } };
+    }
+}
+function copyAnswer() { copyToClipboard(document.getElementById('answerText').value); }
+function saveAnswer() { downloadJSON(JSON.parse(document.getElementById('answerText').value), 'answer.secretchat'); }
+function generateAnswerQR() {
+    const text = document.getElementById('answerText').value;
+    const container = document.getElementById('answerQR'); container.innerHTML='<canvas></canvas>';
+    QRGenerator.createQR(text, container.querySelector('canvas'));
+}
+
+function renderChat(container) {
+    container.innerHTML = `
+        <div class="chat-area">
+            <div class="messages" id="messagesContainer"></div>
+            <div class="input-group">
+                <textarea id="chatInput" class="input-field" rows="2" placeholder="Type..."></textarea>
+                <button class="btn primary" onclick="sendMessage()">${t('send')}</button>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+                <button class="btn" onclick="clearChat()">${t('clearChat')}</button>
+                <button class="btn" onclick="exportChat()">${t('exportChat')}</button>
+                <button class="btn" onclick="importChat()">${t('importChat')}</button>
+                <button class="btn" onclick="showStats()">${t('stats')}</button>
+                <label class="btn" style="cursor:pointer;">${t('fileTransfer')}<input type="file" id="fileInput" style="display:none" onchange="sendFileFromInput(this)"></label>
+                <span id="sessionFp" style="font-family:monospace; opacity:0.8;"></span>
+            </div>
+            <div id="dropZone" style="border:2px dashed var(--border); padding:15px; text-align:center; margin-top:8px; display:none;">${t('dropFile')}</div>
+        </div>
+    `;
+    if (WebRTCManager.sessionFingerprint) {
+        document.getElementById('sessionFp').textContent = `${t('sessionFingerprint')}: ${WebRTCManager.sessionFingerprint} [${t('verify')}]`;
+    }
+    refreshMessages();
+    const dropZone = document.getElementById('dropZone');
+    document.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.display='block'; });
+    document.addEventListener('dragleave', e => { e.preventDefault(); dropZone.style.display='none'; });
+    dropZone.addEventListener('dragover', e=>e.preventDefault());
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault(); dropZone.style.display='none';
+        const files = e.dataTransfer.files; if(files.length>0) startFileSend(files[0]);
+    });
+    document.getElementById('chatInput').addEventListener('keydown', e => {
+        if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+}
+function refreshMessages() {
+    const container = document.getElementById('messagesContainer');
+    if(!container) return;
+    container.innerHTML = ChatManager.messages.map(msg => {
+        const side = msg.sender==='local' ? 'local' : 'remote';
+        const time = new Date(msg.timestamp).toTimeString().slice(0,8);
+        if(msg.type==='text') return `<div class="msg-bubble msg-${side}"><div class="msg-meta">${msg.sender==='local'?currentIdentity.identity:remoteIdentity} · ${time}</div>${escapeHtml(msg.content)}</div>`;
+        else if(msg.type==='file') return `<div class="msg-bubble msg-${side}"><div class="msg-meta">${msg.sender==='local'?currentIdentity.identity:remoteIdentity} · ${time}</div><div class="msg-file">📎 ${msg.fileName} (${formatBytes(msg.fileSize)}) ${msg.downloadUrl?`<a href="${msg.downloadUrl}" download="${msg.fileName}" class="btn" style="padding:2px 8px;">${t('download')}</a>`:''}</div></div>`;
+        return '';
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+}
+function escapeHtml(t) { return String(t).replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function formatBytes(b) { return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'; }
+async function sendMessage() {
+    const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return;
+    const msg = {type:'text', id:crypto.randomUUID(), timestamp:Date.now(), content:text};
+    const sent = await WebRTCManager.sendEncrypted({...msg, sender:'local'});
+    if(sent) { msg.sender='local'; ChatManager.addMessage(msg); input.value=''; refreshMessages(); logToTerminal(t('messageSent')); }
+}
+async function sendFileFromInput(inputEl) {
+    const file = inputEl.files[0]; if(!file) return;
+    await startFileSend(file); inputEl.value='';
+}
+async function startFileSend(file) {
+    const fileMsg = {type:'file', id:crypto.randomUUID(), timestamp:Date.now(), fileName:file.name, fileSize:file.size, sender:'local'};
+    ChatManager.addMessage(fileMsg); refreshMessages();
+    await FileTransferManager.sendFile(file, async(payload)=>await WebRTCManager.sendEncrypted({...payload, sender:'local'}));
+    logToTerminal(t('fileSent')+': '+file.name);
+}
+WebRTCManager.onMessage = async (msg) => {
+    if(msg.type==='session-established') {
+        const fpEl = document.getElementById('sessionFp');
+        if(fpEl) fpEl.textContent = `${t('sessionFingerprint')}: ${msg.fingerprint} [${t('verify')}]`;
+        logToTerminal(t('sessionFingerprint')+': '+msg.fingerprint);
+        return;
+    }
+    if(msg.type==='file-meta' || msg.type==='file-chunk' || msg.type==='file-complete') {
+        FileTransferManager.handleFileMessage(msg,
+            (prog)=>{},
+            (fileInfo)=>{
+                const fMsg = {type:'file', id:crypto.randomUUID(), timestamp:Date.now(), fileName:fileInfo.fileName, fileSize:fileInfo.fileSize, downloadUrl:fileInfo.url, sender:'remote'};
+                ChatManager.addMessage(fMsg); refreshMessages();
+                logToTerminal(t('fileReceived')+': '+fileInfo.fileName);
+            });
+    } else if(msg.type==='text') {
+        const cMsg = {type:'text', id:msg.id, timestamp:msg.timestamp, content:msg.content, sender:'remote'};
+        ChatManager.addMessage(cMsg); refreshMessages();
+    }
+};
+function clearChat() { ChatManager.clear(); refreshMessages(); }
+function exportChat() { downloadJSON(ChatManager.exportChat(), 'chat.json'); logToTerminal(t('chatExported')); }
+function importChat() {
+    const input = document.createElement('input'); input.type='file'; input.accept='.json';
+    input.onchange = async (e) => {
+        const file = e.target.files[0]; if(!file) return;
+        const data = await readFileAsJSON(file);
+        ChatManager.importChat(data); refreshMessages(); logToTerminal(t('chatImported'));
+    };
+    input.click();
+}
+function showStats() {
+    const s = WebRTCManager.stats;
+    const dur = s.startTime ? Math.floor((Date.now()-s.startTime)/1000)+'s' : '0s';
+    alert(`${t('connectionStats')}:\n${t('rtt')}: ${s.rtt}ms\n${t('sentBytes')}: ${formatBytes(s.sentBytes)}\n${t('recvBytes')}: ${formatBytes(s.recvBytes)}\n${t('messages')}: ${s.messages}\n${t('files')}: ${s.files}\n${t('duration')}: ${dur}`);
+}
+function updateStatusDot(state) {
+    const indicator = document.getElementById('statusIndicator');
+    if(!indicator) return;
+    let dotClass, text;
+    if(state==='connected'||state==='completed') { dotClass='dot-connected'; text=t('connected'); }
+    else if(state==='connecting'||state==='new'||state==='checking') { dotClass='dot-connecting'; text=t('connecting'); }
+    else { dotClass='dot-disconnected'; text=t('disconnected'); }
+    indicator.innerHTML = `<span class="status-dot ${dotClass}"></span> ${text}`;
+}
+WebRTCManager.onStatusChange = (state) => {
+    updateStatusDot(state);
+    if(state==='connected' && currentView!=='chat') { currentView='chat'; renderUI(); }
+};
+
+// ==================== INIT ====================
+async function init() {
+    createParticles();
+    currentIdentity = await IdentityManager.loadOrCreate();
+    renderUI();
+    logToTerminal(t('terminalReady'));
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => setLang(e.target.dataset.lang));
+    });
+}
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
