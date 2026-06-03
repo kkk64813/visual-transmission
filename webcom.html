@@ -84,6 +84,13 @@
             font-family: var(--font-mono); font-size:0.8rem; transition: all 0.2s;
         }
         .lang-btn.active, .lang-btn:hover { background:var(--highlight); color:#000; box-shadow:0 0 10px var(--glow); }
+        .debug-panel {
+            background:var(--panel); border:1px solid var(--border);
+            padding:6px 14px; font-family: var(--font-mono); font-size:0.7rem;
+            color: var(--highlight); margin-bottom:6px;
+            clip-path: polygon(2% 0, 100% 0, 98% 100%, 0 100%);
+            opacity:0.9;
+        }
         .identity-panel {
             background:var(--panel); border:1px solid var(--border);
             padding:14px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;
@@ -162,6 +169,7 @@
             <button class="lang-btn" data-lang="zh">中文</button>
         </div>
     </header>
+    <div class="debug-panel" id="debugPanel">ICE: waiting...</div>
     <div class="identity-panel" id="identityPanel"></div>
     <div class="main-content" id="mainContent"></div>
     <div class="terminal-log" id="terminalLog"></div>
@@ -172,14 +180,15 @@
 const i18n = {
     en: {
         identityLabel:"Identity", fingerprintLabel:"Fingerprint", copy:"Copy", newIdentity:"New Identity",
-        createChat:"Create Chat", joinChat:"Join Chat", back:"Back", generateOffer:"Generate Offer",
-        copyOffer:"Copy Offer", saveOffer:"Save Offer", generateQR:"Generate QR", pasteAnswer:"Paste Answer",
-        loadAnswer:"Load Answer File", scanQR:"Scan QR", pasteOffer:"Paste Offer", loadOffer:"Load Offer File",
-        copyAnswer:"Copy Answer", saveAnswer:"Save Answer", connecting:"Connecting...",
-        connected:"Connected", disconnected:"Disconnected", send:"Send", clearChat:"Clear Chat",
-        exportChat:"Export Chat", importChat:"Import Chat", stats:"Stats", connectionStats:"Connection Statistics",
-        rtt:"RTT", sentBytes:"Sent Bytes", recvBytes:"Recv Bytes", messages:"Messages", files:"Files",
-        duration:"Duration", sessionFingerprint:"Session Fingerprint", verify:"Verify with peer",
+        createChat:"Create Chat", joinChat:"Join Chat", back:"Back", home:"Home",
+        generateOffer:"Generate Offer", copyOffer:"Copy Offer", saveOffer:"Save Offer", generateQR:"Generate QR",
+        pasteAnswer:"Paste Answer", loadAnswer:"Load Answer File", scanQR:"Scan QR",
+        pasteOffer:"Paste Offer", loadOffer:"Load Offer File", copyAnswer:"Copy Answer", saveAnswer:"Save Answer",
+        connecting:"Connecting...", connected:"Connected", disconnected:"Disconnected",
+        send:"Send", clearChat:"Clear Chat", exportChat:"Export Chat", importChat:"Import Chat",
+        stats:"Stats", connectionStats:"Connection Statistics", rtt:"RTT", sentBytes:"Sent Bytes",
+        recvBytes:"Recv Bytes", messages:"Messages", files:"Files", duration:"Duration",
+        sessionFingerprint:"Session Fingerprint", verify:"Verify with peer",
         fileTransfer:"File Transfer", dropFile:"Drop file here or click", download:"Download",
         terminalReady:"System ready.", identityLoaded:"Identity loaded", identityGenerated:"New identity generated",
         offerCreated:"Offer created", answerCreated:"Answer created", connectionEstablished:"Connection established",
@@ -190,14 +199,15 @@ const i18n = {
     },
     zh: {
         identityLabel:"身份", fingerprintLabel:"指纹", copy:"复制", newIdentity:"新身份",
-        createChat:"创建聊天", joinChat:"加入聊天", back:"返回", generateOffer:"生成 Offer",
-        copyOffer:"复制 Offer", saveOffer:"保存 Offer", generateQR:"生成二维码", pasteAnswer:"粘贴 Answer",
-        loadAnswer:"加载 Answer 文件", scanQR:"扫描二维码", pasteOffer:"粘贴 Offer", loadOffer:"加载 Offer 文件",
-        copyAnswer:"复制 Answer", saveAnswer:"保存 Answer", connecting:"连接中...",
-        connected:"已连接", disconnected:"未连接", send:"发送", clearChat:"清除聊天",
-        exportChat:"导出聊天", importChat:"导入聊天", stats:"统计", connectionStats:"连接统计",
-        rtt:"往返时间", sentBytes:"发送字节", recvBytes:"接收字节", messages:"消息", files:"文件",
-        duration:"持续时间", sessionFingerprint:"会话指纹", verify:"与对方核对",
+        createChat:"创建聊天", joinChat:"加入聊天", back:"返回", home:"首页",
+        generateOffer:"生成 Offer", copyOffer:"复制 Offer", saveOffer:"保存 Offer", generateQR:"生成二维码",
+        pasteAnswer:"粘贴 Answer", loadAnswer:"加载 Answer 文件", scanQR:"扫描二维码",
+        pasteOffer:"粘贴 Offer", loadOffer:"加载 Offer 文件", copyAnswer:"复制 Answer", saveAnswer:"保存 Answer",
+        connecting:"连接中...", connected:"已连接", disconnected:"未连接",
+        send:"发送", clearChat:"清除聊天", exportChat:"导出聊天", importChat:"导入聊天",
+        stats:"统计", connectionStats:"连接统计", rtt:"往返时间", sentBytes:"发送字节",
+        recvBytes:"接收字节", messages:"消息", files:"文件", duration:"持续时间",
+        sessionFingerprint:"会话指纹", verify:"与对方核对",
         fileTransfer:"文件传输", dropFile:"拖放文件或点击", download:"下载",
         terminalReady:"系统就绪。", identityLoaded:"身份已加载", identityGenerated:"已生成新身份",
         offerCreated:"Offer 已创建", answerCreated:"Answer 已创建", connectionEstablished:"连接已建立",
@@ -645,7 +655,24 @@ const QRScanner = {
     }
 };
 
-// ==================== WEBRTC MANAGER (FIXED) ====================
+// ==================== WEBRTC MANAGER (with STUN and debug) ====================
+const ICE_SERVERS = {
+    iceServers: [
+        {
+            urls: [
+                "stun:stun.l.google.com:19302"
+            ]
+        }
+    ]
+};
+
+function updateDebugInfo(state, gatheringState, connectionState) {
+    const debug = document.getElementById('debugPanel');
+    if (debug) {
+        debug.textContent = `ICE gathering: ${gatheringState} | ICE conn: ${state} | Conn: ${connectionState}`;
+    }
+}
+
 const WebRTCManager = {
     peerConnection: null, dataChannel: null,
     localEphemeralKeyPair: null, remoteEphemeralPublicKey: null,
@@ -654,33 +681,121 @@ const WebRTCManager = {
     stats: { rtt:0, sentBytes:0, recvBytes:0, messages:0, files:0, startTime:0 },
     async createOffer() {
         this.close();
-        const pc = new RTCPeerConnection({iceServers:[]});
+        const pc = new RTCPeerConnection(ICE_SERVERS);
         this.peerConnection = pc;
-        pc.oniceconnectionstatechange = () => { if(this.onStatusChange) this.onStatusChange(pc.iceConnectionState); };
+        // Debug events
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                console.log("ICE candidate:", e.candidate.candidate);
+                logToTerminal("ICE candidate: " + e.candidate.candidate);
+            } else {
+                console.log("ICE Gathering Complete");
+                logToTerminal("ICE Gathering Complete");
+            }
+        };
+        pc.onicegatheringstatechange = () => {
+            updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
+            logToTerminal(`ICE gathering state: ${pc.iceGatheringState}`);
+        };
+        pc.oniceconnectionstatechange = () => {
+            updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
+            logToTerminal(`ICE connection state: ${pc.iceConnectionState}`);
+            if (this.onStatusChange) this.onStatusChange(pc.iceConnectionState);
+        };
+        pc.onconnectionstatechange = () => {
+            updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
+            logToTerminal(`Connection state: ${pc.connectionState}`);
+        };
+
         const dc = pc.createDataChannel('secret', {ordered:true});
         this.setupDataChannel(dc);
         this.localEphemeralKeyPair = await CryptoHelper.generateECDHKeyPair();
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        // Wait for ICE gathering to complete
         await new Promise((resolve) => {
             if (pc.iceGatheringState === 'complete') resolve();
-            else { const t=setTimeout(resolve,15000); pc.onicegatheringstatechange = () => { if(pc.iceGatheringState==='complete'){ clearTimeout(t); resolve(); } }; }
+            else {
+                const timeout = setTimeout(() => {
+                    logToTerminal("ICE gathering timeout, using current candidates");
+                    resolve();
+                }, 15000);
+                const checkState = () => {
+                    if (pc.iceGatheringState === 'complete') {
+                        clearTimeout(timeout);
+                        pc.onicegatheringstatechange = null;
+                        resolve();
+                    }
+                };
+                pc.onicegatheringstatechange = checkState;
+                // Also listen to icecandidate with null candidate as fallback
+                pc.onicecandidate = (e) => {
+                    if (!e.candidate) {
+                        clearTimeout(timeout);
+                        pc.onicegatheringstatechange = null;
+                        resolve();
+                    }
+                };
+            }
         });
         return { version:'1.0', type:'offer', sdp:pc.localDescription.sdp, senderIdentity: currentIdentity.identity, senderFingerprint: currentIdentity.fingerprint, timestamp: Date.now() };
     },
     async applyOffer(offerData) {
         this.close();
-        const pc = new RTCPeerConnection({iceServers:[]});
+        const pc = new RTCPeerConnection(ICE_SERVERS);
         this.peerConnection = pc;
-        pc.oniceconnectionstatechange = () => { if(this.onStatusChange) this.onStatusChange(pc.iceConnectionState); };
+        // Debug events
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                console.log("ICE candidate:", e.candidate.candidate);
+                logToTerminal("ICE candidate: " + e.candidate.candidate);
+            } else {
+                console.log("ICE Gathering Complete");
+                logToTerminal("ICE Gathering Complete");
+            }
+        };
+        pc.onicegatheringstatechange = () => {
+            updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
+            logToTerminal(`ICE gathering state: ${pc.iceGatheringState}`);
+        };
+        pc.oniceconnectionstatechange = () => {
+            updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
+            logToTerminal(`ICE connection state: ${pc.iceConnectionState}`);
+            if (this.onStatusChange) this.onStatusChange(pc.iceConnectionState);
+        };
+        pc.onconnectionstatechange = () => {
+            updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
+            logToTerminal(`Connection state: ${pc.connectionState}`);
+        };
         pc.ondatachannel = (event) => this.setupDataChannel(event.channel);
         this.localEphemeralKeyPair = await CryptoHelper.generateECDHKeyPair();
         await pc.setRemoteDescription(new RTCSessionDescription({type:'offer', sdp:offerData.sdp}));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        // Wait for ICE gathering to complete
         await new Promise(resolve => {
-            if(pc.iceGatheringState==='complete') resolve();
-            else { const t=setTimeout(resolve,15000); pc.onicegatheringstatechange = ()=>{ if(pc.iceGatheringState==='complete'){ clearTimeout(t); resolve(); } }; }
+            if (pc.iceGatheringState === 'complete') resolve();
+            else {
+                const timeout = setTimeout(() => {
+                    logToTerminal("ICE gathering timeout, using current candidates");
+                    resolve();
+                }, 15000);
+                const checkState = () => {
+                    if (pc.iceGatheringState === 'complete') {
+                        clearTimeout(timeout);
+                        pc.onicegatheringstatechange = null;
+                        resolve();
+                    }
+                };
+                pc.onicegatheringstatechange = checkState;
+                pc.onicecandidate = (e) => {
+                    if (!e.candidate) {
+                        clearTimeout(timeout);
+                        pc.onicegatheringstatechange = null;
+                        resolve();
+                    }
+                };
+            }
         });
         return { version:'1.0', type:'answer', sdp:pc.localDescription.sdp, senderIdentity: currentIdentity.identity, senderFingerprint: currentIdentity.fingerprint, timestamp: Date.now() };
     },
@@ -695,7 +810,6 @@ const WebRTCManager = {
                 const pubBytes = await CryptoHelper.exportPublicKey(this.localEphemeralKeyPair);
                 dc.send(JSON.stringify({type:'ephemeral-key', key: Array.from(pubBytes)}));
             }
-            // ★ 关键修复：DataChannel 打开时主动通知“已连接”，确保加入端跳转
             if (this.onStatusChange) this.onStatusChange('connected');
         };
         dc.onmessage = async (event) => {
@@ -859,7 +973,7 @@ function goHome() { WebRTCManager.close(); currentView='home'; renderUI(); }
 async function renderCreate(container) {
     container.innerHTML = `
         <div style="display:flex; gap:10px; margin-bottom:10px;">
-            <button class="btn" onclick="goHome()">${t('back')}</button>
+            <button class="btn" onclick="goHome()">${t('home')}</button>
             <button class="btn primary" id="genOfferBtn">${t('generateOffer')}</button>
         </div>
         <div id="offerArea" style="display:none;">
@@ -903,7 +1017,6 @@ async function pasteAnswer() {
         const answer = JSON.parse(text);
         await WebRTCManager.applyAnswer(answer);
         remoteIdentity = answer.senderIdentity;
-        // ★ 设置状态回调以更新指示灯
         WebRTCManager.onStatusChange = (state) => { updateStatusDot(state); };
         currentView='chat'; renderUI();
         logToTerminal(t('connectionEstablished'));
@@ -938,7 +1051,7 @@ async function scanAnswerQR() {
 
 function renderJoin(container) {
     container.innerHTML = `
-        <button class="btn" onclick="goHome()">${t('back')}</button>
+        <button class="btn" onclick="goHome()">${t('home')}</button>
         <div><strong>${t('pasteOffer')}:</strong></div>
         <textarea id="offerPaste" class="input-field" rows="3"></textarea>
         <div class="input-group">
@@ -960,14 +1073,11 @@ function renderJoin(container) {
 async function pasteOffer() {
     const offerField = document.getElementById('offerPaste');
     if (!offerField) {
-        logToTerminal('Error: Not in Join Chat page. Please go back and enter Join Chat again.');
+        logToTerminal('Error: Not in Join Chat page.');
         return;
     }
     const text = offerField.value.trim();
-    if (!text) {
-        logToTerminal('Error: Offer text is empty.');
-        return;
-    }
+    if (!text) { logToTerminal('Error: Offer text is empty.'); return; }
     let offer;
     try { offer = JSON.parse(text); } catch (e) { logToTerminal('Error: Invalid JSON - '+e); return; }
     remoteIdentity = offer.senderIdentity || '';
@@ -1036,6 +1146,7 @@ function renderChat(container) {
                 <button class="btn primary" onclick="sendMessage()">${t('send')}</button>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+                <button class="btn" onclick="goHome()">${t('home')}</button>
                 <button class="btn" onclick="clearChat()">${t('clearChat')}</button>
                 <button class="btn" onclick="exportChat()">${t('exportChat')}</button>
                 <button class="btn" onclick="importChat()">${t('importChat')}</button>
