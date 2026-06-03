@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Secret Chat Zero Server</title>
     <style>
         :root {
@@ -24,6 +24,7 @@
             min-height:100vh;
             overflow-x:hidden;
             position:relative;
+            -webkit-tap-highlight-color: transparent;
         }
         body::before {
             content:"";
@@ -70,6 +71,7 @@
             clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
             margin-bottom:10px;
             box-shadow: 0 0 15px var(--glow);
+            flex-wrap: wrap;
         }
         .logo {
             font-family: var(--font-mono); font-size:1.3rem;
@@ -90,6 +92,7 @@
             color: var(--highlight); margin-bottom:6px;
             clip-path: polygon(2% 0, 100% 0, 98% 100%, 0 100%);
             opacity:0.9;
+            word-break: break-all;
         }
         .identity-panel {
             background:var(--panel); border:1px solid var(--border);
@@ -106,6 +109,8 @@
             clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
             font-family: var(--font-mono); font-size:0.8rem; transition: all 0.2s;
             text-transform: uppercase; letter-spacing: 1px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .btn:hover { background:var(--highlight); color:#000; box-shadow:0 0 15px var(--glow); transform:scale(1.02); }
         .btn:active { transform:scale(0.98); }
@@ -121,7 +126,7 @@
             flex-wrap:wrap; margin:auto;
         }
         .qr-container { text-align:center; margin:10px 0; }
-        .qr-container canvas { background:white; padding:10px; border:2px solid var(--border); }
+        .qr-container canvas { background:white; padding:10px; border:2px solid var(--border); max-width:100%; height:auto; }
         .input-group { display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; }
         .input-field {
             flex:1; background: rgba(255,140,0,0.05); border:1px solid var(--border);
@@ -129,6 +134,7 @@
             backdrop-filter: blur(4px);
             clip-path: polygon(2% 0, 100% 0, 98% 100%, 0 100%);
             min-width:200px;
+            font-size: 0.9rem;
         }
         .input-field:focus { outline:none; border-color:var(--highlight); box-shadow:0 0 10px var(--glow); }
         .chat-area { flex:1; display:flex; flex-direction:column; }
@@ -140,7 +146,7 @@
         .msg-local { background: rgba(255,140,0,0.15); border-left:3px solid var(--highlight); margin-left:auto; }
         .msg-remote { background: rgba(0,200,200,0.1); border-right:3px solid cyan; margin-right:auto; }
         .msg-meta { font-size:0.65rem; opacity:0.7; margin-bottom:4px; }
-        .msg-file { background:rgba(255,140,0,0.05); padding:10px; margin:5px 0; border:1px dashed var(--border); display:flex; gap:10px; align-items:center; }
+        .msg-file { background:rgba(255,140,0,0.05); padding:10px; margin:5px 0; border:1px dashed var(--border); display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
         .terminal-log {
             background:#0a0a0a; border:1px solid var(--border); padding:8px;
             font-family: var(--font-mono); font-size:0.7rem; height:120px;
@@ -156,6 +162,10 @@
         @media (max-width: 768px) {
             .identity-panel { flex-direction:column; align-items:flex-start; }
             .home-actions { flex-direction:column; }
+            .btn { padding:10px 15px; font-size:0.9rem; }
+            .input-field { min-width: 100%; font-size: 1rem; }
+            header { flex-direction: column; gap: 10px; }
+            .logo { font-size:1.1rem; }
         }
     </style>
 </head>
@@ -190,12 +200,13 @@ const i18n = {
         recvBytes:"Recv Bytes", messages:"Messages", files:"Files", duration:"Duration",
         sessionFingerprint:"Session Fingerprint", verify:"Verify with peer",
         fileTransfer:"File Transfer", dropFile:"Drop file here or click", download:"Download",
-        terminalReady:"System ready.", identityLoaded:"Identity loaded", identityGenerated:"New identity generated",
+        terminalReady:"System ready. TURN enabled.", identityLoaded:"Identity loaded", identityGenerated:"New identity generated",
         offerCreated:"Offer created", answerCreated:"Answer created", connectionEstablished:"Connection established",
         connectionFailed:"Connection failed", messageSent:"Message sent", fileSent:"File sent",
         fileReceived:"File received", chatExported:"Chat exported", chatImported:"Chat imported",
         qrScanned:"QR code scanned", scanningQR:"Scanning QR code...", noCamera:"Camera not available",
-        barcodeUnsupported:"Barcode detection not supported, use image upload"
+        barcodeUnsupported:"Barcode detection not supported, use image upload",
+        uploadQRImage:"Upload QR Image"
     },
     zh: {
         identityLabel:"身份", fingerprintLabel:"指纹", copy:"复制", newIdentity:"新身份",
@@ -209,12 +220,13 @@ const i18n = {
         recvBytes:"接收字节", messages:"消息", files:"文件", duration:"持续时间",
         sessionFingerprint:"会话指纹", verify:"与对方核对",
         fileTransfer:"文件传输", dropFile:"拖放文件或点击", download:"下载",
-        terminalReady:"系统就绪。", identityLoaded:"身份已加载", identityGenerated:"已生成新身份",
+        terminalReady:"系统就绪。TURN 已启用。", identityLoaded:"身份已加载", identityGenerated:"已生成新身份",
         offerCreated:"Offer 已创建", answerCreated:"Answer 已创建", connectionEstablished:"连接已建立",
         connectionFailed:"连接失败", messageSent:"消息已发送", fileSent:"文件已发送",
         fileReceived:"文件已接收", chatExported:"聊天已导出", chatImported:"聊天已导入",
         qrScanned:"二维码已扫描", scanningQR:"正在扫描二维码...", noCamera:"摄像头不可用",
-        barcodeUnsupported:"不支持条码检测，请使用图片上传"
+        barcodeUnsupported:"不支持条码检测，请使用图片上传",
+        uploadQRImage:"上传二维码图片"
     }
 };
 
@@ -629,20 +641,20 @@ const QRGenerator = (function(){
 const QRScanner = {
     async scanFromCamera(videoEl, timeout=30000) {
         if (!('BarcodeDetector' in window)) { logToTerminal(t('barcodeUnsupported')); return null; }
-        const detector = new BarcodeDetector({formats:['qr_code']});
-        const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-        videoEl.srcObject = stream;
-        await videoEl.play();
-        logToTerminal(t('scanningQR'));
-        const start = Date.now();
-        while (Date.now()-start < timeout) {
-            try {
+        try {
+            const detector = new BarcodeDetector({formats:['qr_code']});
+            const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+            videoEl.srcObject = stream;
+            await videoEl.play();
+            logToTerminal(t('scanningQR'));
+            const start = Date.now();
+            while (Date.now()-start < timeout) {
                 const barcodes = await detector.detect(videoEl);
                 if (barcodes.length>0) { stream.getTracks().forEach(t=>t.stop()); videoEl.srcObject=null; return barcodes[0].rawValue; }
-            } catch(e) {}
-            await new Promise(r=>setTimeout(r,100));
-        }
-        stream.getTracks().forEach(t=>t.stop()); videoEl.srcObject=null;
+                await new Promise(r=>setTimeout(r,100));
+            }
+            stream.getTracks().forEach(t=>t.stop()); videoEl.srcObject=null;
+        } catch(e) { logToTerminal('Camera error: '+e.message); }
         return null;
     },
     async scanFromImage(file) {
@@ -655,13 +667,21 @@ const QRScanner = {
     }
 };
 
-// ==================== WEBRTC MANAGER (with STUN and debug) ====================
+// ==================== WEBRTC MANAGER (STUN + TURN) ====================
 const ICE_SERVERS = {
     iceServers: [
         {
-            urls: [
-                "stun:stun.l.google.com:19302"
-            ]
+            urls: "stun:stun.l.google.com:19302"
+        },
+        {
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+        },
+        {
+            urls: "turn:openrelay.metered.ca:443?transport=tcp",
+            username: "openrelayproject",
+            credential: "openrelayproject"
         }
     ]
 };
@@ -683,28 +703,22 @@ const WebRTCManager = {
         this.close();
         const pc = new RTCPeerConnection(ICE_SERVERS);
         this.peerConnection = pc;
-        // Debug events
         pc.onicecandidate = (e) => {
             if (e.candidate) {
-                console.log("ICE candidate:", e.candidate.candidate);
                 logToTerminal("ICE candidate: " + e.candidate.candidate);
             } else {
-                console.log("ICE Gathering Complete");
                 logToTerminal("ICE Gathering Complete");
             }
         };
         pc.onicegatheringstatechange = () => {
             updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
-            logToTerminal(`ICE gathering state: ${pc.iceGatheringState}`);
         };
         pc.oniceconnectionstatechange = () => {
             updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
-            logToTerminal(`ICE connection state: ${pc.iceConnectionState}`);
             if (this.onStatusChange) this.onStatusChange(pc.iceConnectionState);
         };
         pc.onconnectionstatechange = () => {
             updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
-            logToTerminal(`Connection state: ${pc.connectionState}`);
         };
 
         const dc = pc.createDataChannel('secret', {ordered:true});
@@ -712,30 +726,12 @@ const WebRTCManager = {
         this.localEphemeralKeyPair = await CryptoHelper.generateECDHKeyPair();
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        // Wait for ICE gathering to complete
         await new Promise((resolve) => {
             if (pc.iceGatheringState === 'complete') resolve();
             else {
-                const timeout = setTimeout(() => {
-                    logToTerminal("ICE gathering timeout, using current candidates");
-                    resolve();
-                }, 15000);
-                const checkState = () => {
-                    if (pc.iceGatheringState === 'complete') {
-                        clearTimeout(timeout);
-                        pc.onicegatheringstatechange = null;
-                        resolve();
-                    }
-                };
-                pc.onicegatheringstatechange = checkState;
-                // Also listen to icecandidate with null candidate as fallback
-                pc.onicecandidate = (e) => {
-                    if (!e.candidate) {
-                        clearTimeout(timeout);
-                        pc.onicegatheringstatechange = null;
-                        resolve();
-                    }
-                };
+                const timeout = setTimeout(() => { logToTerminal("ICE gathering timeout"); resolve(); }, 15000);
+                pc.onicegatheringstatechange = () => { if(pc.iceGatheringState==='complete'){ clearTimeout(timeout); resolve(); } };
+                pc.onicecandidate = (e) => { if(!e.candidate){ clearTimeout(timeout); resolve(); } };
             }
         });
         return { version:'1.0', type:'offer', sdp:pc.localDescription.sdp, senderIdentity: currentIdentity.identity, senderFingerprint: currentIdentity.fingerprint, timestamp: Date.now() };
@@ -744,57 +740,27 @@ const WebRTCManager = {
         this.close();
         const pc = new RTCPeerConnection(ICE_SERVERS);
         this.peerConnection = pc;
-        // Debug events
         pc.onicecandidate = (e) => {
-            if (e.candidate) {
-                console.log("ICE candidate:", e.candidate.candidate);
-                logToTerminal("ICE candidate: " + e.candidate.candidate);
-            } else {
-                console.log("ICE Gathering Complete");
-                logToTerminal("ICE Gathering Complete");
-            }
+            if (e.candidate) logToTerminal("ICE candidate: " + e.candidate.candidate);
+            else logToTerminal("ICE Gathering Complete");
         };
-        pc.onicegatheringstatechange = () => {
-            updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
-            logToTerminal(`ICE gathering state: ${pc.iceGatheringState}`);
-        };
+        pc.onicegatheringstatechange = () => updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
         pc.oniceconnectionstatechange = () => {
             updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
-            logToTerminal(`ICE connection state: ${pc.iceConnectionState}`);
             if (this.onStatusChange) this.onStatusChange(pc.iceConnectionState);
         };
-        pc.onconnectionstatechange = () => {
-            updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
-            logToTerminal(`Connection state: ${pc.connectionState}`);
-        };
+        pc.onconnectionstatechange = () => updateDebugInfo(pc.iceConnectionState, pc.iceGatheringState, pc.connectionState);
         pc.ondatachannel = (event) => this.setupDataChannel(event.channel);
         this.localEphemeralKeyPair = await CryptoHelper.generateECDHKeyPair();
         await pc.setRemoteDescription(new RTCSessionDescription({type:'offer', sdp:offerData.sdp}));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        // Wait for ICE gathering to complete
         await new Promise(resolve => {
             if (pc.iceGatheringState === 'complete') resolve();
             else {
-                const timeout = setTimeout(() => {
-                    logToTerminal("ICE gathering timeout, using current candidates");
-                    resolve();
-                }, 15000);
-                const checkState = () => {
-                    if (pc.iceGatheringState === 'complete') {
-                        clearTimeout(timeout);
-                        pc.onicegatheringstatechange = null;
-                        resolve();
-                    }
-                };
-                pc.onicegatheringstatechange = checkState;
-                pc.onicecandidate = (e) => {
-                    if (!e.candidate) {
-                        clearTimeout(timeout);
-                        pc.onicegatheringstatechange = null;
-                        resolve();
-                    }
-                };
+                const timeout = setTimeout(() => { logToTerminal("ICE gathering timeout"); resolve(); }, 15000);
+                pc.onicegatheringstatechange = () => { if(pc.iceGatheringState==='complete'){ clearTimeout(timeout); resolve(); } };
+                pc.onicecandidate = (e) => { if(!e.candidate){ clearTimeout(timeout); resolve(); } };
             }
         });
         return { version:'1.0', type:'answer', sdp:pc.localDescription.sdp, senderIdentity: currentIdentity.identity, senderFingerprint: currentIdentity.fingerprint, timestamp: Date.now() };
@@ -991,6 +957,7 @@ async function renderCreate(container) {
                 <button class="btn" onclick="pasteAnswer()">${t('pasteAnswer')}</button>
                 <button class="btn" onclick="loadAnswerFile()">${t('loadAnswer')}</button>
                 <button class="btn" onclick="scanAnswerQR()">${t('scanQR')}</button>
+                <button class="btn" onclick="uploadAnswerQR()">${t('uploadQRImage')}</button>
             </div>
         </div>
     `;
@@ -1036,6 +1003,10 @@ function loadAnswerFile() {
     input.click();
 }
 async function scanAnswerQR() {
+    if (!('BarcodeDetector' in window)) {
+        logToTerminal(t('barcodeUnsupported') + ' - ' + t('uploadQRImage'));
+        return;
+    }
     const video = document.createElement('video'); video.style.display='none'; document.body.appendChild(video);
     const result = await QRScanner.scanFromCamera(video);
     document.body.removeChild(video);
@@ -1048,6 +1019,26 @@ async function scanAnswerQR() {
         logToTerminal(t('qrScanned')+' - '+t('connectionEstablished'));
     }
 }
+async function uploadAnswerQR() {
+    const input = document.createElement('input'); input.type='file'; input.accept='image/*';
+    input.onchange = async (e) => {
+        const file = e.target.files[0]; if(!file) return;
+        try {
+            const result = await QRScanner.scanFromImage(file);
+            if(result) {
+                const answer = JSON.parse(result);
+                await WebRTCManager.applyAnswer(answer);
+                remoteIdentity = answer.senderIdentity;
+                WebRTCManager.onStatusChange = (state) => { updateStatusDot(state); };
+                currentView='chat'; renderUI();
+                logToTerminal(t('qrScanned')+' - '+t('connectionEstablished'));
+            } else {
+                logToTerminal('No QR code found in image.');
+            }
+        } catch(e) { logToTerminal('Scan error: '+e); }
+    };
+    input.click();
+}
 
 function renderJoin(container) {
     container.innerHTML = `
@@ -1058,6 +1049,7 @@ function renderJoin(container) {
             <button class="btn" onclick="pasteOffer()">${t('pasteOffer')}</button>
             <button class="btn" onclick="loadOfferFile()">${t('loadOffer')}</button>
             <button class="btn" onclick="scanOfferQR()">${t('scanQR')}</button>
+            <button class="btn" onclick="uploadOfferQR()">${t('uploadQRImage')}</button>
         </div>
         <div id="answerArea" style="display:none;">
             <textarea id="answerText" class="input-field" rows="6" readonly></textarea>
@@ -1072,14 +1064,11 @@ function renderJoin(container) {
 }
 async function pasteOffer() {
     const offerField = document.getElementById('offerPaste');
-    if (!offerField) {
-        logToTerminal('Error: Not in Join Chat page.');
-        return;
-    }
+    if (!offerField) return;
     const text = offerField.value.trim();
-    if (!text) { logToTerminal('Error: Offer text is empty.'); return; }
+    if (!text) { logToTerminal('Error: empty'); return; }
     let offer;
-    try { offer = JSON.parse(text); } catch (e) { logToTerminal('Error: Invalid JSON - '+e); return; }
+    try { offer = JSON.parse(text); } catch (e) { logToTerminal('Invalid JSON'); return; }
     remoteIdentity = offer.senderIdentity || '';
     try {
         const answer = await WebRTCManager.applyOffer(offer);
@@ -1091,7 +1080,7 @@ async function pasteOffer() {
             answerAreaEl = document.getElementById('answerArea');
             const offerFieldNew = document.getElementById('offerPaste');
             if (offerFieldNew) offerFieldNew.value = text;
-            if (!answerTextEl) { logToTerminal('Error: Cannot display answer area.'); return; }
+            if (!answerTextEl) return;
         }
         answerTextEl.value = JSON.stringify(answer, null, 2);
         answerAreaEl.style.display = 'block';
@@ -1099,7 +1088,7 @@ async function pasteOffer() {
         WebRTCManager.onStatusChange = (state) => {
             if (state === 'connected' || state === 'completed') { currentView = 'chat'; renderUI(); }
         };
-    } catch(e) { logToTerminal('Error applying offer: '+e); }
+    } catch(e) { logToTerminal('Error: '+e); }
 }
 function loadOfferFile() {
     const input = document.createElement('input'); input.type='file'; input.accept='.secretchat';
@@ -1116,6 +1105,10 @@ function loadOfferFile() {
     input.click();
 }
 async function scanOfferQR() {
+    if (!('BarcodeDetector' in window)) {
+        logToTerminal(t('barcodeUnsupported') + ' - ' + t('uploadQRImage'));
+        return;
+    }
     const video = document.createElement('video'); video.style.display='none'; document.body.appendChild(video);
     const result = await QRScanner.scanFromCamera(video);
     document.body.removeChild(video);
@@ -1128,6 +1121,25 @@ async function scanOfferQR() {
         logToTerminal(t('qrScanned')+' - '+t('answerCreated'));
         WebRTCManager.onStatusChange = (state) => { if(state==='connected'||state==='completed') { currentView='chat'; renderUI(); } };
     }
+}
+async function uploadOfferQR() {
+    const input = document.createElement('input'); input.type='file'; input.accept='image/*';
+    input.onchange = async (e) => {
+        const file = e.target.files[0]; if(!file) return;
+        try {
+            const result = await QRScanner.scanFromImage(file);
+            if(result) {
+                const offer = JSON.parse(result);
+                remoteIdentity = offer.senderIdentity;
+                const answer = await WebRTCManager.applyOffer(offer);
+                document.getElementById('answerText').value = JSON.stringify(answer, null, 2);
+                document.getElementById('answerArea').style.display='block';
+                logToTerminal(t('qrScanned')+' - '+t('answerCreated'));
+                WebRTCManager.onStatusChange = (state) => { if(state==='connected'||state==='completed') { currentView='chat'; renderUI(); } };
+            }
+        } catch(e) { logToTerminal('Error: '+e); }
+    };
+    input.click();
 }
 function copyAnswer() { copyToClipboard(document.getElementById('answerText').value); }
 function saveAnswer() { downloadJSON(JSON.parse(document.getElementById('answerText').value), 'answer.secretchat'); }
