@@ -4,362 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MG's Mystic Warehouse | 神经仓库终端</title>
-    <!-- Font Awesome 6 + 科幻字体 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@300;500;700&family=Space+Mono:wght@400;700&family=Inter:opsz,wght@14..32,300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #020408;
-            font-family: 'Inter', 'Rajdhani', 'Segoe UI', sans-serif;
-            color: #eef2ff;
-            overflow-x: hidden;
-            min-height: 100vh;
-            position: relative;
-        }
-
-        /* 动态粒子背景 Canvas */
-        #particle-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        /* 科幻网格层 + 斜向网格 */
-        .cyber-grid {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                repeating-linear-gradient(0deg, rgba(255, 94, 46, 0.06) 1px, transparent 1px),
-                repeating-linear-gradient(90deg, rgba(255, 94, 46, 0.06) 1px, transparent 1px);
-            background-size: 55px 55px;
-            pointer-events: none;
-            z-index: 1;
-        }
-        .cyber-grid::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: repeating-linear-gradient(45deg, rgba(255, 150, 80, 0.03) 1px, transparent 1px);
-            background-size: 35px 35px;
-            pointer-events: none;
-        }
-
-        /* 动态扫描光线 (倾斜移动) */
-        .scan-line {
-            position: fixed;
-            top: -10%;
-            left: -20%;
-            width: 140%;
-            height: 6px;
-            background: linear-gradient(90deg, transparent, #ff5e2e, #ffaa88, #ff5e2e, transparent);
-            opacity: 0.7;
-            animation: scanMoveDiagonal 7s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 5;
-            filter: blur(3px);
-        }
-        @keyframes scanMoveDiagonal {
-            0% { transform: translateX(-100%) translateY(0); }
-            50% { transform: translateX(20%) translateY(35vh); }
-            100% { transform: translateX(100%) translateY(70vh); }
-        }
-
-        /* 脉冲光晕球体 */
-        .glow-orbit {
-            position: fixed;
-            bottom: -10%;
-            right: -10%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(255,94,46,0.2) 0%, rgba(0,0,0,0) 70%);
-            border-radius: 50%;
-            animation: pulseGlow 8s infinite;
-            pointer-events: none;
-            z-index: 1;
-        }
-        @keyframes pulseGlow {
-            0% { opacity: 0.2; transform: scale(0.9);}
-            50% { opacity: 0.5; transform: scale(1.1);}
-            100% { opacity: 0.2; transform: scale(0.9);}
-        }
-
-        /* 玻璃卡片 + 3D倾斜效果 */
-        .glass-panel {
-            background: rgba(5, 8, 14, 0.75);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 94, 46, 0.4);
-            border-radius: 42px;
-            box-shadow: 0 20px 40px -16px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px rgba(255,94,46,0.1) inset;
-            transition: transform 0.25s ease, box-shadow 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-        .glass-panel:hover {
-            transform: translateY(-3px) rotateX(1deg);
-            box-shadow: 0 30px 50px -20px rgba(255,94,46,0.4);
-        }
-
-        /* 霓虹按钮 */
-        .btn-neon {
-            background: linear-gradient(105deg, #ff5e2e 0%, #b53a0f 100%);
-            border: none;
-            border-radius: 60px;
-            padding: 12px 28px;
-            font-weight: 700;
-            letter-spacing: 1.2px;
-            font-family: 'Rajdhani', sans-serif;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 4px 14px rgba(255, 94, 46, 0.5);
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-neon::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -60%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(0,0,0,0) 70%);
-            opacity: 0;
-            transition: 0.3s;
-        }
-        .btn-neon:hover::after { opacity: 1; transform: translate(10%, 10%);}
-        .btn-neon:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 10px 28px rgba(255, 94, 46, 0.7);}
-        
-        .btn-outline {
-            background: transparent;
-            border: 1.5px solid #ff5e2e;
-            border-radius: 60px;
-            padding: 10px 24px;
-            color: #ffccaa;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            backdrop-filter: blur(4px);
-        }
-        .btn-outline:hover {
-            background: rgba(255, 94, 46, 0.2);
-            box-shadow: 0 0 12px rgba(255,94,46,0.4);
-            border-color: #ffaa77;
-        }
-
-        /* 模块卡片 */
-        .module-card {
-            background: rgba(0, 0, 0, 0.65);
-            border: 1px solid #2a2f3c;
-            border-radius: 32px;
-            padding: 24px 12px;
-            text-align: center;
-            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            color: #6a7080;
-            cursor: not-allowed;
-            position: relative;
-            backdrop-filter: blur(8px);
-        }
-        .module-card.unlocked {
-            border-color: #ff5e2e;
-            background: rgba(255, 94, 46, 0.1);
-            color: #ffccaa;
-            cursor: pointer;
-            box-shadow: 0 0 12px rgba(255,94,46,0.2);
-        }
-        .module-card.unlocked:hover {
-            transform: translateY(-6px);
-            border-color: #ffaa77;
-            box-shadow: 0 20px 32px -16px rgba(255,94,46,0.6);
-        }
-        .module-icon { font-size: 2.6rem; margin-bottom: 16px; transition: 0.2s; }
-        .module-card.unlocked:hover .module-icon { transform: scale(1.05); text-shadow: 0 0 8px #ff5e2e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #020408; font-family: 'Inter', 'Rajdhani', sans-serif; color: #eef2ff; overflow-x: hidden; position: relative; min-height: 100vh; }
+        #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .cyber-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: repeating-linear-gradient(0deg, rgba(255,94,46,0.06) 1px, transparent 1px), repeating-linear-gradient(90deg, rgba(255,94,46,0.06) 1px, transparent 1px); background-size: 55px 55px; pointer-events: none; z-index: 1; }
+        .glass-panel { background: rgba(5,8,14,0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255,94,46,0.4); border-radius: 42px; box-shadow: 0 20px 40px -16px rgba(0,0,0,0.8); transition: transform 0.25s; position: relative; z-index: 10; }
+        .btn-neon { background: linear-gradient(105deg, #ff5e2e 0%, #b53a0f 100%); border: none; border-radius: 60px; padding: 12px 28px; font-weight: 700; letter-spacing: 1.2px; font-family: 'Rajdhani', sans-serif; color: white; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 14px rgba(255,94,46,0.5); }
+        .btn-outline { background: transparent; border: 1.5px solid #ff5e2e; border-radius: 60px; padding: 10px 24px; color: #ffccaa; font-weight: 600; cursor: pointer; backdrop-filter: blur(4px); transition: 0.2s; }
+        .btn-outline:hover { background: rgba(255,94,46,0.2); box-shadow: 0 0 12px rgba(255,94,46,0.4); }
+        .module-card { background: rgba(0,0,0,0.65); border: 1px solid #2a2f3c; border-radius: 32px; padding: 24px 12px; text-align: center; transition: 0.3s; color: #6a7080; cursor: not-allowed; position: relative; }
+        .module-card.unlocked { border-color: #ff5e2e; background: rgba(255,94,46,0.1); color: #ffccaa; cursor: pointer; box-shadow: 0 0 12px rgba(255,94,46,0.2); }
+        .module-card.unlocked:hover { transform: translateY(-6px); border-color: #ffaa77; box-shadow: 0 20px 32px -16px rgba(255,94,46,0.6); }
+        .module-icon { font-size: 2.6rem; margin-bottom: 16px; display: block; }
         .lock-badge { position: absolute; top: 14px; right: 18px; font-size: 1rem; color: #ff5e2e; }
-
-        /* 时间大数字 + 霓虹跳动 */
-        .time-mega {
-            font-family: 'Space Mono', 'Orbitron', monospace;
-            font-size: 2.3rem;
-            font-weight: 700;
-            letter-spacing: 4px;
-            background: linear-gradient(135deg, #ffe0cc, #ff5e2e);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 0 12px rgba(255,94,46,0.6);
-            animation: textPulse 2s infinite;
-        }
-        @keyframes textPulse {
-            0% { opacity: 0.9; text-shadow: 0 0 4px #ff5e2e; }
-            50% { opacity: 1; text-shadow: 0 0 14px #ff5e2e; }
-            100% { opacity: 0.9; text-shadow: 0 0 4px #ff5e2e; }
-        }
-
-        /* 终端日志栏 */
-        .terminal-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-            border-top: 1px solid #ff5e2e;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
-            padding: 6px 20px;
-            color: #88ffaa;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            pointer-events: none;
-        }
-        .terminal-log {
-            overflow-x: auto;
-            white-space: nowrap;
-            flex: 1;
-        }
-        .terminal-log span { color: #ffcc88; margin-right: 20px; }
-
-        /* 管理后台页签 ———— 科幻悬浮+流光边框 */
-        .admin-tab-container {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin: 28px 0 24px;
-            border-bottom: 1px solid rgba(255,94,46,0.3);
-            padding-bottom: 12px;
-        }
-        .admin-tab {
-            background: rgba(10, 14, 22, 0.7);
-            border: none;
-            padding: 12px 28px;
-            border-radius: 60px;
-            color: #ccd6f0;
-            font-weight: 600;
-            font-family: 'Rajdhani', sans-serif;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.25s;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(4px);
-            font-size: 0.9rem;
-        }
-        .admin-tab::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,94,46,0.3), transparent);
-            transition: left 0.4s;
-        }
-        .admin-tab:hover::before { left: 100%; }
-        .admin-tab.active {
-            background: linear-gradient(115deg, #ff5e2e20, #ff5e2e08);
-            color: #ffaa77;
-            box-shadow: 0 0 12px rgba(255,94,46,0.4), inset 0 0 0 1px #ff5e2e;
-            text-shadow: 0 0 3px #ff5e2e;
-        }
-        .admin-tab:hover { transform: translateY(-2px); color: #ffccaa; border-color: #ff5e2e; }
-
-        /* 管理表格 */
-        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .admin-table th, .admin-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,94,46,0.2); text-align: left; }
-        .admin-table tr:hover { background: rgba(255,94,46,0.08); box-shadow: inset 0 0 8px rgba(255,94,46,0.2); }
-
-        /* 拖拽模块 */
-        .drag-module-item {
-            background: #0b0e16;
-            border-radius: 28px;
-            padding: 14px 20px;
-            margin-bottom: 12px;
-            border-left: 5px solid #ff5e2e;
-            cursor: grab;
-            transition: 0.1s;
-        }
+        .time-mega { font-family: 'Space Mono', 'Orbitron', monospace; font-size: 2.3rem; font-weight: 700; letter-spacing: 4px; background: linear-gradient(135deg, #ffe0cc, #ff5e2e); -webkit-background-clip: text; background-clip: text; color: transparent; animation: textPulse 2s infinite; }
+        @keyframes textPulse { 0% { opacity: 0.9; text-shadow: 0 0 4px #ff5e2e; } 50% { opacity: 1; text-shadow: 0 0 14px #ff5e2e; } 100% { opacity: 0.9; text-shadow: 0 0 4px #ff5e2e; } }
+        .terminal-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); border-top: 1px solid #ff5e2e; font-family: 'Space Mono', monospace; font-size: 0.75rem; padding: 6px 20px; z-index: 1000; display: flex; justify-content: space-between; }
+        .toast-msg { position: fixed; bottom: 80px; right: 24px; background: #12161f; border-left: 5px solid #ff5e2e; border-radius: 20px; padding: 12px 20px; z-index: 10001; animation: slideToast 0.25s ease; font-family: monospace; }
+        @keyframes slideToast { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
+        @media (max-width: 800px) { .time-mega { font-size: 1.4rem; } .module-grid { grid-template-columns: repeat(2,1fr) !important; } .glass-panel { padding: 20px; } }
+        .input-cyber { background: #0c0f16; border: 1px solid #2a2f3c; border-radius: 40px; padding: 14px 20px; color: #f0f3fa; font-family: 'JetBrains Mono', monospace; outline: none; width: 100%; transition: 0.2s; }
+        .input-cyber:focus { border-color: #ff5e2e; box-shadow: 0 0 12px rgba(255,94,46,0.3); }
+        .admin-tab-container { display: flex; gap: 16px; flex-wrap: wrap; margin: 28px 0 24px; border-bottom: 1px solid rgba(255,94,46,0.3); padding-bottom: 12px; }
+        .admin-tab { background: rgba(10,14,22,0.7); border: none; padding: 12px 28px; border-radius: 60px; color: #ccd6f0; font-weight: 600; cursor: pointer; transition: 0.25s; font-family: 'Rajdhani', sans-serif; }
+        .admin-tab.active, .admin-tab:hover { background: linear-gradient(115deg, #ff5e2e20, #ff5e2e08); color: #ffaa77; box-shadow: 0 0 12px rgba(255,94,46,0.4); }
+        .drag-module-item { background: #0b0e16; border-radius: 28px; padding: 14px 20px; margin-bottom: 12px; border-left: 5px solid #ff5e2e; cursor: grab; transition: 0.1s; }
         .drag-module-item:active { cursor: grabbing; }
         .drag-over { border: 2px dashed #ff5e2e; background: #1e1f2e; transform: scale(1.01); }
-
-        /* 全局动画 */
-        @keyframes fadeSlideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .glass-panel, .module-card { animation: fadeSlideUp 0.4s ease-out; }
-
-        /* Toast 消息 */
-        .toast-msg {
-            position: fixed;
-            bottom: 80px;
-            right: 24px;
-            background: #12161f;
-            border-left: 5px solid #ff5e2e;
-            border-radius: 20px;
-            padding: 12px 20px;
-            z-index: 10001;
-            font-weight: 500;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-            animation: slideToast 0.25s ease;
-        }
-        @keyframes slideToast {
-            from { opacity: 0; transform: translateX(60px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* 响应式 */
-        @media (max-width: 800px) {
-            .glass-panel { padding: 20px; }
-            .module-grid { grid-template-columns: repeat(2,1fr) !important; }
-            .time-mega { font-size: 1.4rem; letter-spacing: 2px; }
-            .admin-tab { padding: 8px 16px; font-size: 0.75rem; }
-        }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .admin-table th, .admin-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,94,46,0.2); text-align: left; }
+        .admin-table tr:hover { background: rgba(255,94,46,0.08); }
     </style>
 </head>
 <body>
 <canvas id="particle-canvas"></canvas>
 <div class="cyber-grid"></div>
-<div class="scan-line"></div>
-<div class="glow-orbit"></div>
 <div id="appRoot" style="position: relative; z-index: 20; max-width: 1400px; margin: 0 auto; padding: 24px 20px 60px;"></div>
-<div class="terminal-bar" id="terminalBar">
-    <i class="fas fa-terminal"></i>
-    <div class="terminal-log" id="terminalLog">[>] SYSTEM BOOT</div>
-    <div><i class="fas fa-shield-alt"></i> SECURE MODE</div>
-</div>
+<div class="terminal-bar" id="terminalBar"><i class="fas fa-terminal"></i><div id="terminalLog">[>] SYSTEM BOOT</div><div><i class="fas fa-shield-alt"></i> SECURE MODE</div></div>
 
 <script>
-    // ======================== 国际化 ========================
+    // ======================== 配置 ========================
+    const API_BASE = 'https://mg-secret-vault.mgjack13.workers.dev';
+    // =====================================================
+
+    // 国际化
     const i18n = {
-        en: { title:"MG's Mystic Warehouse", lockedStatus:"🔒 LOCKED", unlockedStatus:"⚡ GRANTED", enterCode:"Enter Activation Code", unlockBtn:"Unlock Vault", admin:"Admin", support:"Support", timeRemaining:"Session Left", modules:"Tool Modules", announcement:"Announcement", contact:"Contact", send:"Send", copy:"Copy", minutes:"min", seconds:"sec", adminPanel:"Admin Nexus", dashboard:"Dashboard", codeGen:"Code Gen", sessionMon:"Session", moduleMgr:"Module Manager", supportMsgs:"Messages", settings:"Settings", generate:"Generate", save:"Save", delete:"Delete" },
-        zh: { title:"MG的神秘仓库", lockedStatus:"🔒 已锁定", unlockedStatus:"⚡ 已激活", enterCode:"输入激活码", unlockBtn:"解锁", admin:"管理", support:"客服", timeRemaining:"剩余时间", modules:"工具模块", announcement:"公告栏", contact:"联系客服", send:"发送", copy:"复制", minutes:"分", seconds:"秒", adminPanel:"管理员中枢", dashboard:"看板", codeGen:"激活码", sessionMon:"会话", moduleMgr:"模块管理", supportMsgs:"留言", settings:"设置", generate:"生成", save:"保存", delete:"删除" }
+        en: { title:"MG's Mystic Warehouse", lockedStatus:"🔒 LOCKED", unlockedStatus:"⚡ GRANTED", enterCode:"Enter Activation Code", unlockBtn:"Unlock Vault", admin:"Admin", support:"Support", timeRemaining:"Session Left", modules:"Tool Modules", announcement:"Announcement", generate:"Generate", copy:"Copy", minutes:"min", seconds:"sec", dashboard:"Dashboard", codeGen:"Code Gen", moduleMgr:"Module Manager", supportMsgs:"Messages", settings:"Settings", save:"Save", delete:"Delete" },
+        zh: { title:"MG的神秘仓库", lockedStatus:"🔒 已锁定", unlockedStatus:"⚡ 已激活", enterCode:"输入激活码", unlockBtn:"解锁", admin:"管理", support:"客服", timeRemaining:"剩余时间", modules:"工具模块", announcement:"公告栏", generate:"生成", copy:"复制", minutes:"分", seconds:"秒", dashboard:"看板", codeGen:"激活码", moduleMgr:"模块管理", supportMsgs:"留言", settings:"设置", save:"保存", delete:"删除" }
     };
     let currentLang = localStorage.getItem('mg_lang') || 'en';
     function t(key) { return i18n[currentLang][key] || i18n.en[key] || key; }
 
-    // ========== 全局状态 ==========
+    // 全局状态
     let state = {
         locked: true, loggedIn: false, sessionExpiry: 0, allowedModules: [], deviceId: null,
         adminMode: false, adminLoggedIn: false, customModules: [],
@@ -370,14 +69,15 @@
         sessionsLog: JSON.parse(localStorage.getItem('mg_sessions_log') || '[]')
     };
     let sessionInterval = null, toastTimer = null;
-    const API_BASE = '';
-    const iconList = ['fa-cogs','fa-microchip','fa-shield-haltered','fa-laptop-code','fa-database','fa-cloud-upload-alt','fa-video','fa-key','fa-lock','fa-unlock-alt','fa-chart-line','fa-robot','fa-terminal','fa-code-branch','fa-fire','fa-bolt','fa-meteor','fa-satellite-dish','fa-brain','fa-cube'];
+
+    // 预置核心模块
     const coreModules = [
         { id: "Encoder", name: "Encoder", icon: "fa-lock", url: "encoder.html", enabled: true, order: 0, isCustom: false, core: true },
         { id: "Decoder", name: "Decoder", icon: "fa-lock-open", url: "recv.html", enabled: true, order: 1, isCustom: false, core: true },
         { id: "Serverless", name: "Serverless Communication", icon: "fa-cloud-upload-alt", url: "webcom.html", enabled: true, order: 2, isCustom: false, core: true },
         { id: "VideoHide", name: "File Video Steganography", icon: "fa-video", url: "Videohide.html", enabled: true, order: 3, isCustom: false, core: true }
     ];
+    const iconList = ['fa-cogs','fa-microchip','fa-shield-haltered','fa-laptop-code','fa-database','fa-cloud-upload-alt','fa-video','fa-key','fa-lock','fa-unlock-alt','fa-chart-line','fa-robot','fa-terminal','fa-code-branch','fa-fire','fa-bolt','fa-meteor','fa-satellite-dish','fa-brain','fa-cube'];
 
     function showToast(msg, isErr = false) {
         if(toastTimer) clearTimeout(toastTimer);
@@ -421,17 +121,6 @@
         } catch(e) { return 'dev_'+Math.random().toString(36).substring(2,10); }
     }
 
-    function generateActivationCode() {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
-        let parts = [];
-        for(let i=0;i<3;i++) {
-            let seg = '';
-            for(let j=0;j<5;j++) seg += chars[Math.floor(Math.random() * chars.length)];
-            parts.push(seg);
-        }
-        return parts.join('-');
-    }
-
     function saveCustomModules() { localStorage.setItem('mg_custom_modules', JSON.stringify(state.customModules)); }
     function loadCustomModules() {
         const stored = localStorage.getItem('mg_custom_modules');
@@ -463,24 +152,15 @@
 
     async function submitActivation(code) {
         if(!state.deviceId) state.deviceId = await getDeviceFingerprint();
-        if(code === "MG-8F3D2-9A7E1-5C0B4") {
-            state.loggedIn = true; state.locked = false;
-            state.allowedModules = ['Encoder','Decoder','Serverless','VideoHide','A','B','C','D','E','F','G','H','I','J','K'];
-            state.sessionExpiry = Date.now() + 30*24*3600*1000;
-            startCountdown();
-            addTerminalLog("SUPER CODE ACTIVATED: Full access granted.");
-            showToast("✅ Full access unlocked (test code)");
-            render();
-            return;
-        }
-        const storedEntry = state.generatedCodes.find(c => c.code === code);
-        if(storedEntry && storedEntry.deviceLock && storedEntry.deviceLock !== state.deviceId) { showToast("Code locked to another device", true); return; }
         try {
-            const res = await fetch(`${API_BASE}/api/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code, device_id: state.deviceId }), credentials:'include' });
+            const res = await fetch(`${API_BASE}/api/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, device_id: state.deviceId }),
+                credentials: 'include'
+            });
             const data = await res.json();
             if(res.ok && data.success) {
-                if(storedEntry) storedEntry.deviceLock = state.deviceId;
-                else state.generatedCodes.push({ code, deviceLock: state.deviceId, used: true });
+                if(!state.generatedCodes.find(c=>c.code===code)) state.generatedCodes.push({ code, deviceLock: state.deviceId, used: true });
                 localStorage.setItem('mg_codes_db', JSON.stringify(state.generatedCodes));
                 state.sessionsLog.unshift({ device: state.deviceId.slice(0,12), time: new Date().toISOString(), action: "login" });
                 localStorage.setItem('mg_sessions_log', JSON.stringify(state.sessionsLog.slice(0,20)));
@@ -488,7 +168,11 @@
                 await refreshSession();
                 addTerminalLog(`Activation code ${code} used`);
             } else showToast(data.message || "Invalid code", true);
-        } catch(err) { showToast("API error, use demo code: MG-8F3D2-9A7E1-5C0B4", true); addTerminalLog("API unreachable"); }
+        } catch(err) {
+            console.error(err);
+            showToast("API error: " + err.message, true);
+            addTerminalLog("API unreachable");
+        }
     }
 
     async function onModuleClick(moduleId, customUrl, isCustom) {
@@ -506,23 +190,24 @@
 
     function sendSupport(data) { let msgs = JSON.parse(localStorage.getItem('mg_support_messages') || '[]'); msgs.push({ ...data, time: new Date().toISOString() }); localStorage.setItem('mg_support_messages', JSON.stringify(msgs)); showToast("Message sent"); addTerminalLog(`Support from ${data.email}`); }
 
-    // ========== 渲染 ==========
+    // 渲染
     function render() {
         const root = document.getElementById('appRoot');
         if(!root) return;
-        if(state.adminMode && state.adminLoggedIn) { root.innerHTML = renderAdminPanel(); attachAdminEvents(); }
-        else { root.innerHTML = renderUserPortal(); attachUserEvents(); }
+        if(state.adminMode && state.adminLoggedIn) {
+            root.innerHTML = renderAdminPanel();
+            attachAdminEvents();
+        } else {
+            root.innerHTML = renderUserPortal();
+            attachUserEvents();
+        }
         updateClock();
         if(window.clockInterval) clearInterval(window.clockInterval);
         window.clockInterval = setInterval(updateClock, 1000);
     }
-
     function updateClock() {
         const el = document.getElementById('liveDateTime');
-        if(el) {
-            const now = new Date();
-            el.innerText = now.toLocaleString(currentLang === 'zh' ? 'zh-CN' : 'en-US', { hour12: false });
-        }
+        if(el) el.innerText = new Date().toLocaleString(currentLang === 'zh' ? 'zh-CN' : 'en-US', { hour12: false });
     }
 
     function renderUserPortal() {
@@ -531,10 +216,7 @@
         let modulesDisplay = [...state.customModules].filter(m=>m.enabled).sort((a,b)=>(a.order||0)-(b.order||0));
         const modulesHtml = modulesDisplay.map(m => {
             const isUnlocked = !state.locked && (state.allowedModules.includes(m.id) || ['Encoder','Decoder','Serverless','VideoHide'].includes(m.id));
-            return `<div class="module-card ${state.locked ? '' : (isUnlocked ? 'unlocked' : '')}" data-id="${m.id}" data-url="${m.url||''}" data-custom="${m.isCustom}">
-                <i class="fas ${m.icon} module-icon"></i><strong>${m.name}</strong>
-                ${state.locked || !isUnlocked ? `<div class="lock-badge"><i class="fas fa-lock"></i></div>` : ''}
-            </div>`;
+            return `<div class="module-card ${state.locked ? '' : (isUnlocked ? 'unlocked' : '')}" data-id="${m.id}" data-url="${m.url||''}" data-custom="${m.isCustom}"><i class="fas ${m.icon} module-icon"></i><strong>${m.name}</strong>${state.locked || !isUnlocked ? `<div class="lock-badge"><i class="fas fa-lock"></i></div>` : ''}</div>`;
         }).join('');
         return `
         <div class="glass-panel" style="padding: 28px; margin-bottom: 28px;">
@@ -554,7 +236,7 @@
                 <div><i class="fas fa-shield-alt"></i> STATUS: <span style="color:#ff5e2e; font-weight:bold;">${state.locked ? t('lockedStatus') : t('unlockedStatus')}</span></div>
                 <div><i class="fas fa-hourglass-half"></i> ${t('timeRemaining')}: <span id="remainTime">${remainStr}</span></div>
             </div>
-            ${state.locked ? `<div style="margin-top: 32px; display: flex; gap: 16px;"><input type="text" id="activationCodeInput" class="input-cyber" placeholder="${t('enterCode')} (e.g. MG-8F3D2-9A7E1-5C0B4)" style="flex:2;"><button id="unlockAction" class="btn-neon">${t('unlockBtn')}</button></div>` : `<div style="margin-top: 24px;"><i class="fas fa-check-circle"></i> Active session — all licensed modules ready</div>`}
+            ${state.locked ? `<div style="margin-top: 32px; display: flex; gap: 16px;"><input type="text" id="activationCodeInput" class="input-cyber" placeholder="${t('enterCode')}" style="flex:2;"><button id="unlockAction" class="btn-neon">${t('unlockBtn')}</button></div>` : `<div style="margin-top: 24px;"><i class="fas fa-check-circle"></i> Active session — all licensed modules ready</div>`}
         </div>
         <div class="glass-panel" style="margin-top: 32px; padding: 28px;">
             <h3><i class="fas fa-cubes"></i> ${t('modules')}</h3>
@@ -574,23 +256,46 @@
 
     function renderAdminPanel() { return `<div class="glass-panel" style="padding:28px;"><div style="display:flex; justify-content:space-between;"><h2><i class="fas fa-user-secret"></i> ${t('adminPanel')}</h2><div><button id="exitAdminMode" class="btn-outline">Exit</button> <button id="adminLogout" class="btn-outline">Logout</button></div></div><div class="admin-tab-container" id="adminTabContainerHead"></div><div id="adminTabContent"></div></div>`; }
 
-    function renderAdminTab(tab) { const container = document.getElementById('adminTabContent'); if(!container) return;
-        if(tab === 'dashboard') { let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]').length; container.innerHTML=`<div><i class="fas fa-chart-line"></i> Active Session: ${state.loggedIn?'✅':'❌'}<br>Messages: ${msgs}<br>Custom Modules: ${state.customModules.length}<br>Logs: ${state.sessionsLog.slice(0,3).map(l=>l.action).join(',')}</div>`; }
-        else if(tab === 'codegen') {
-            const codesTable = state.generatedCodes.map(c => `<tr><td style="font-family:monospace">${c.code}</td><td>${c.duration||'1h'}</td><td>${c.modules||'A,B,C'}</td><td>${c.deviceLock?'Used':'Unused'}</td><td><button class="btn-outline del-code-btn" data-code="${c.code}" style="padding:2px 12px;">${t('delete')}</button></td>`).join('');
-            container.innerHTML = `<div style="display:flex; gap:16px; margin-bottom:24px;"><select id="codeDuration" class="input-cyber"><option value="3minutes">3 min</option><option value="1hour">1 hour</option><option value="1day">1 day</option><option value="1week">1 week</option><option value="1month">1 month</option></select><input id="codeModulesStr" class="input-cyber" placeholder="Modules" value="Encoder,Decoder,Serverless,VideoHide"><button id="genCodeBtn" class="btn-neon">${t('generate')}</button></div><div id="genResultBox" class="glass-panel" style="padding:16px;"></div><h4>Existing Codes</h4><table class="admin-table"><tr><th>Code</th><th>Duration</th><th>Modules</th><th>Status</th><th></th></tr>${codesTable}</table>`;
-            document.getElementById('genCodeBtn')?.addEventListener('click',()=>{ let dur=document.getElementById('codeDuration').value, mods=document.getElementById('codeModulesStr').value, newCode=generateActivationCode(); state.generatedCodes.push({code:newCode, duration:dur, modules:mods, used:false, deviceLock:null}); localStorage.setItem('mg_codes_db',JSON.stringify(state.generatedCodes)); document.getElementById('genResultBox').innerHTML=`<code>${newCode}</code> <button class="btn-outline copyNewBtn">${t('copy')}</button>`; document.querySelector('.copyNewBtn')?.addEventListener('click',()=>{ navigator.clipboard.writeText(newCode); showToast("Copied!"); }); renderAdminTab('codegen'); });
+    function renderAdminTab(tab) {
+        const container = document.getElementById('adminTabContent');
+        if(!container) return;
+        if(tab === 'dashboard') {
+            let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]').length;
+            container.innerHTML=`<div><i class="fas fa-chart-line"></i> Active Session: ${state.loggedIn?'✅':'❌'}<br>Messages: ${msgs}<br>Custom Modules: ${state.customModules.length}<br>Logs: ${state.sessionsLog.slice(0,3).map(l=>l.action).join(',')}</div>`;
+        } else if(tab === 'codegen') {
+            const codesTable = state.generatedCodes.map(c => `<tr><td style="font-family:monospace">${c.code}</td><td>${c.duration||'1h'}</td><td>${c.modules||'A,B,C'}</td><td>${c.deviceLock?'Used':'Unused'}</td><td><button class="btn-outline del-code-btn" data-code="${c.code}" style="padding:2px 12px;">${t('delete')}</button></td></tr>`).join('');
+            container.innerHTML = `<div style="display:flex; gap:16px; margin-bottom:24px;"><select id="codeDuration" class="input-cyber"><option value="3minutes">3 min</option><option value="1hour">1 hour</option><option value="24hours">24 hours</option><option value="1week">1 week</option><option value="1month">1 month</option></select><input id="codeModulesStr" class="input-cyber" placeholder="Modules" value="Encoder,Decoder,Serverless,VideoHide"><button id="genCodeBtn" class="btn-neon">${t('generate')}</button></div><div id="genResultBox" class="glass-panel" style="padding:16px;"></div><h4>Existing Codes</h4><table class="admin-table"><tr><th>Code</th><th>Duration</th><th>Modules</th><th>Status</th><th></th></tr>${codesTable}一筹`;
+            document.getElementById('genCodeBtn')?.addEventListener('click', async () => {
+                const duration = document.getElementById('codeDuration').value;
+                const modules = document.getElementById('codeModulesStr').value;
+                try {
+                    const res = await fetch(`${API_BASE}/api/admin/generate-code`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                        body: JSON.stringify({ duration, modules })
+                    });
+                    const data = await res.json();
+                    if(res.ok && data.success) {
+                        state.generatedCodes.push({ code: data.code, duration, modules, used: false, deviceLock: null });
+                        localStorage.setItem('mg_codes_db', JSON.stringify(state.generatedCodes));
+                        document.getElementById('genResultBox').innerHTML = `<code>${data.code}</code> <button class="btn-outline copyNewBtn">${t('copy')}</button>`;
+                        document.querySelector('.copyNewBtn')?.addEventListener('click', () => { navigator.clipboard.writeText(data.code); showToast("Copied!"); });
+                        renderAdminTab('codegen');
+                    } else showToast(data.message || "Generate failed", true);
+                } catch(err) { showToast("API error: " + err.message, true); }
+            });
             document.querySelectorAll('.del-code-btn').forEach(btn=>btn.addEventListener('click',()=>{ state.generatedCodes=state.generatedCodes.filter(c=>c.code!==btn.dataset.code); localStorage.setItem('mg_codes_db',JSON.stringify(state.generatedCodes)); renderAdminTab('codegen'); }));
-        }
-        else if(tab === 'sessionmon') container.innerHTML = `<div>Device ID: ${state.deviceId?.slice(0,32)}...<br>Expires: ${state.sessionExpiry?new Date(state.sessionExpiry).toLocaleString():'N/A'}<br>Recent logs: ${state.sessionsLog.map(l=>l.action).join('<br>')}</div>`;
-        else if(tab === 'modulemgr') {
+        } else if(tab === 'modulemgr') {
             const sorted = [...state.customModules].sort((a,b)=>(a.order||0)-(b.order||0));
-            container.innerHTML = `<button id="newModuleBtn" class="btn-neon" style="margin-bottom:20px;"><i class="fas fa-plus"></i> Add Custom Module</button><div id="dragModulesContainer">${sorted.map(m=>`<div class="drag-module-item" data-id="${m.id}" draggable="true"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;"><i class="fas ${m.icon}" style="font-size:1.5rem;"></i> <strong>${m.name}</strong> <select class="mod-icon-select" data-id="${m.id}">${iconList.map(ic=>`<option value="${ic}" ${m.icon===ic?'selected':''}>${ic}</option>`).join('')}</select><input type="text" class="mod-url-edit" data-id="${m.id}" value="${m.url||''}" placeholder="URL"><input type="text" class="mod-name-edit" data-id="${m.id}" value="${m.name}"><label>Enable: <input type="checkbox" class="mod-enable-edit" data-id="${m.id}" ${m.enabled!==false?'checked':''}></label>${!m.core?`<button class="del-module" data-id="${m.id}">🗑️</button>`:'<span style="color:#ff5e2e;">core</span>'}</div></div>`).join('')}</div><p><i class="fas fa-arrows-alt"></i> Drag to reorder</p>`;
+            container.innerHTML = `<button id="newModuleBtn" class="btn-neon" style="margin-bottom:20px;"><i class="fas fa-plus"></i> Add Custom Module</button><div id="dragModulesContainer">${sorted.map(m=>`<div class="drag-module-item" data-id="${m.id}" draggable="true"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;"><i class="fas ${m.icon}" style="font-size:1.5rem;"></i> <strong>${m.name}</strong> <select class="mod-icon-select" data-id="${m.id}">${iconList.map(ic=>`<option value="${ic}" ${m.icon===ic?'selected':''}>${ic}</option>`).join('')}</select><input type="text" class="mod-url-edit" data-id="${m.id}" value="${m.url||''}" placeholder="URL"><input type="text" class="mod-name-edit" data-id="${m.id}" value="${m.name}"><label>Enable: <input type="checkbox" class="mod-enable-edit" data-id="${m.id}" ${m.enabled!==false?'checked':''}></label>${!m.core?`<button class="del-module" data-id="${m.id}">🗑️</button>`:'<span style="color:#ff5e2e;">core</span>'}</div></div>`).join('')}</div><p><i class="fas fa-arrows-alt"></i> Drag to reorder. Changes auto-save.</p>`;
             initDragDrop(); attachModuleEditHandlers();
             document.getElementById('newModuleBtn')?.addEventListener('click',()=>{ state.customModules.push({ id:'cust_'+Date.now(), name:'New Tool', icon:'fa-cogs', url:'https://example.com', enabled:true, order:state.customModules.length, isCustom:true }); saveCustomModules(); renderAdminTab('modulemgr'); });
+        } else if(tab === 'supportmsg') {
+            let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]');
+            container.innerHTML=`<ul>${msgs.map(m=>`<li><strong>${m.email}</strong>: ${m.message}<br><small>${m.time}</small></li>`).join('')}</ul>`;
+        } else if(tab === 'settings') {
+            container.innerHTML=`<div><label>Site Title: <input id="setSiteTitle" class="input-cyber" value="${state.siteTitle}"></label></div><div><label>Announcement: <textarea id="setAnnouncement" rows="2" class="input-cyber">${state.announcement}</textarea></label></div><div><label>New Admin Password: <input type="password" id="newAdminPwd" class="input-cyber"></label></div><button id="saveSettingsBtn" class="btn-neon">${t('save')}</button>`;
+            document.getElementById('saveSettingsBtn')?.addEventListener('click',()=>{ state.siteTitle=document.getElementById('setSiteTitle').value; state.announcement=document.getElementById('setAnnouncement').value; let npwd=document.getElementById('newAdminPwd').value; if(npwd) state.adminPasswordHash=btoa(npwd); localStorage.setItem('mg_site_title',state.siteTitle); localStorage.setItem('mg_announcement',state.announcement); localStorage.setItem('mg_admin_hash',state.adminPasswordHash); showToast("Saved"); render(); });
         }
-        else if(tab === 'supportmsg') { let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]'); container.innerHTML=`<ul>${msgs.map(m=>`<li><strong>${m.email}</strong>: ${m.message}<br><small>${m.time}</small></li>`).join('')}</ul>`; }
-        else if(tab === 'settings') { container.innerHTML=`<div><label>Site Title: <input id="setSiteTitle" class="input-cyber" value="${state.siteTitle}"></label></div><div><label>Announcement: <textarea id="setAnnouncement" rows="2" class="input-cyber">${state.announcement}</textarea></label></div><div><label>New Admin Password: <input type="password" id="newAdminPwd" class="input-cyber"></label></div><button id="saveSettingsBtn" class="btn-neon">${t('save')}</button>`; document.getElementById('saveSettingsBtn')?.addEventListener('click',()=>{ state.siteTitle=document.getElementById('setSiteTitle').value; state.announcement=document.getElementById('setAnnouncement').value; let npwd=document.getElementById('newAdminPwd').value; if(npwd) state.adminPasswordHash=btoa(npwd); localStorage.setItem('mg_site_title',state.siteTitle); localStorage.setItem('mg_announcement',state.announcement); localStorage.setItem('mg_admin_hash',state.adminPasswordHash); showToast("Saved"); render(); }); }
     }
 
     function initDragDrop() { let dragSrc=null; document.querySelectorAll('.drag-module-item').forEach(el=>{ el.setAttribute('draggable','true'); el.addEventListener('dragstart',e=>{ dragSrc=el; e.dataTransfer.effectAllowed='move'; }); el.addEventListener('dragover',e=>{ e.preventDefault(); el.classList.add('drag-over'); }); el.addEventListener('dragleave',()=>el.classList.remove('drag-over')); el.addEventListener('drop',e=>{ e.preventDefault(); el.classList.remove('drag-over'); if(dragSrc && dragSrc!==el){ const parent=document.getElementById('dragModulesContainer'); const children=[...parent.children]; const fromIdx=children.indexOf(dragSrc), toIdx=children.indexOf(el); if(fromIdx!==-1 && toIdx!==-1){ let reorder=[...state.customModules]; const [moved]=reorder.splice(fromIdx,1); reorder.splice(toIdx,0,moved); reorder.forEach((mod,idx)=>mod.order=idx); state.customModules=reorder; saveCustomModules(); renderAdminTab('modulemgr'); } } dragSrc=null; }); }); }
@@ -605,15 +310,9 @@
     function attachAdminEvents() {
         const headContainer = document.getElementById('adminTabContainerHead');
         if(headContainer) {
-            const tabs = ['dashboard','codegen','sessionmon','modulemgr','supportmsg','settings'];
+            const tabs = ['dashboard','codegen','modulemgr','supportmsg','settings'];
             headContainer.innerHTML = tabs.map(tab => `<button class="admin-tab" data-tab="${tab}">${t(tab)}</button>`).join('');
-            document.querySelectorAll('.admin-tab').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('active'));
-                    btn.classList.add('active');
-                    renderAdminTab(btn.dataset.tab);
-                });
-            });
+            document.querySelectorAll('.admin-tab').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderAdminTab(btn.dataset.tab); }); });
             document.querySelector('.admin-tab')?.classList.add('active');
             renderAdminTab('dashboard');
         }
@@ -621,46 +320,27 @@
         document.getElementById('adminLogout')?.addEventListener('click',()=>{ state.adminLoggedIn=false; state.adminMode=false; render(); });
     }
 
-    // 粒子背景
     function initParticles() {
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
         let width = window.innerWidth, height = window.innerHeight;
         let particles = [];
-        const PARTICLE_COUNT = 100;
         function resize() { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; }
         window.addEventListener('resize', resize);
         resize();
-        for(let i=0; i<PARTICLE_COUNT; i++) {
-            particles.push({ x: Math.random()*width, y: Math.random()*height, radius: Math.random()*2+1, alpha: Math.random()*0.5+0.2, speedX: (Math.random()-0.5)*0.3, speedY: (Math.random()-0.5)*0.2 });
-        }
-        function draw() {
-            if(!ctx) return;
-            ctx.clearRect(0,0,width,height);
-            for(let p of particles) {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-                ctx.fillStyle = `rgba(255, 94, 46, ${p.alpha})`;
-                ctx.fill();
-                p.x += p.speedX;
-                p.y += p.speedY;
-                if(p.x<0) p.x=width; if(p.x>width) p.x=0;
-                if(p.y<0) p.y=height; if(p.y>height) p.y=0;
-            }
-            requestAnimationFrame(draw);
-        }
+        for(let i=0; i<100; i++) particles.push({ x: Math.random()*width, y: Math.random()*height, radius: Math.random()*2+1, alpha: Math.random()*0.5+0.2, speedX: (Math.random()-0.5)*0.3, speedY: (Math.random()-0.5)*0.2 });
+        function draw() { if(!ctx) return; ctx.clearRect(0,0,width,height); for(let p of particles) { ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fillStyle = `rgba(255, 94, 46, ${p.alpha})`; ctx.fill(); p.x += p.speedX; p.y += p.speedY; if(p.x<0) p.x=width; if(p.x>width) p.x=0; if(p.y<0) p.y=height; if(p.y>height) p.y=0; } requestAnimationFrame(draw); }
         draw();
     }
     initParticles();
 
-    // 启动
     (async () => {
         state.deviceId = await getDeviceFingerprint();
         loadCustomModules();
         await refreshSession();
         render();
         setInterval(() => { if(!state.adminMode) refreshSession(); }, 30000);
-        addTerminalLog("Warehouse terminal online | Neural UI ready");
+        addTerminalLog("Warehouse terminal online | Connected to Worker");
     })();
 </script>
 </body>
