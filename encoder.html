@@ -4,9 +4,9 @@
 <head>
 <script>
 (async()=>{
-  // 模块授权验证 – Encoder
+  // 模块授权验证 – 使用后端实际模块名 B
   try {
-    const resp = await fetch('/api/check-module?module=Encoder', {
+    const resp = await fetch('/api/check-module?module=B', {
       credentials: 'include'
     });
     const data = await resp.json();
@@ -20,6 +20,7 @@
     location.href = '/index.html';
   }
 })();
+</script>
 </script>
 
 
