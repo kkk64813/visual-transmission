@@ -63,6 +63,8 @@
         .module-checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 24px; }
         .module-checkbox-group label { display: flex; align-items: center; gap: 8px; background: #0c0f16; padding: 6px 12px; border-radius: 40px; border: 1px solid #2a2f3c; cursor: pointer; transition: 0.2s; }
         .module-checkbox-group label:hover { border-color: #ff5e2e; background: rgba(255,94,46,0.1); }
+        .copy-icon { cursor: pointer; margin-left: 8px; color: #ffaa77; transition: 0.2s; }
+        .copy-icon:hover { color: #ff5e2e; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -109,7 +111,6 @@
     }
 
     function addTerminalLog(msg, force = false) {
-        // 减少冗余日志：只在关键事件或 force=true 时添加
         if (!force && (msg.includes("Session active") || msg.includes("API unreachable") || msg.includes("Warehouse terminal online"))) return;
         const term = document.getElementById('terminalLog');
         if(term) {
@@ -241,7 +242,6 @@
         }
     }
 
-    // 生成激活码（模块列表使用复选框，拼接成字符串）
     async function generateActivationCode(duration, modulesArray) {
         const modulesStr = modulesArray.join(',');
         try {
@@ -295,6 +295,10 @@
                 return false;
             }
         } catch(e) { showToast("API error", true); return false; }
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => showToast("Copied!", false)).catch(() => showToast("Copy failed", true));
     }
 
     function render() {
@@ -381,6 +385,53 @@
     function renderAdminPanel() { return `<div class="glass-panel" style="padding:28px;"><div style="display:flex; justify-content:space-between; flex-wrap:wrap;"><h2><i class="fas fa-user-secret"></i> ${t('adminPanel')}</h2><div style="gap:12px; display:flex;"><button id="exitAdminMode" class="btn-outline">Exit</button> <button id="adminLogout" class="btn-outline">Logout</button></div></div><div class="admin-tab-container" id="adminTabContainerHead"></div><div id="adminTabContent"></div></div>`; }
 
     let currentAdminTab = 'dashboard';
+    // 专门用于刷新激活码列表的函数（不重建整个页签）
+    async function refreshCodeList() {
+        const tableBody = document.getElementById('codeTableBody');
+        if (!tableBody) return;
+        const codes = await fetchActivationCodes();
+        const nowSec = Math.floor(Date.now() / 1000);
+        tableBody.innerHTML = codes.map(c => {
+            let statusText = '', statusClass = '';
+            if (c.status === 'unused') { statusText = t('unused'); statusClass = 'status-unused'; }
+            else if (c.status === 'used') { statusText = t('used'); statusClass = 'status-used'; }
+            else { statusText = t('expired'); statusClass = 'status-expired'; }
+            let remainingStr = '';
+            if (c.remaining_seconds && c.remaining_seconds > 0) {
+                const rem = c.remaining_seconds;
+                const hours = Math.floor(rem / 3600);
+                const mins = Math.floor((rem % 3600) / 60);
+                remainingStr = hours>0? `${hours}h ${mins}m` : `${mins}m`;
+            } else if (c.status === 'used') remainingStr = 'Expired';
+            else remainingStr = '—';
+            return `<tr>
+                <td style="font-family:monospace">${c.code} <i class="fas fa-copy copy-icon" data-code="${c.code}" style="cursor:pointer;"></i></td>
+                <td>${c.duration_type}</td>
+                <td>${c.module_permissions}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${remainingStr}</td>
+                <td><button class="btn-outline del-code-btn" data-code="${c.code}" style="padding:2px 12px;">${t('delete')}</button></td>
+            </tr>`;
+        }).join('');
+        // 绑定复制和删除事件
+        document.querySelectorAll('.copy-icon').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const code = icon.dataset.code;
+                copyToClipboard(code);
+            });
+        });
+        document.querySelectorAll('.del-code-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const code = btn.dataset.code;
+                if(confirm(`Delete ${code}?`)) {
+                    const ok = await deleteActivationCode(code);
+                    if(ok) refreshCodeList();
+                }
+            });
+        });
+    }
+
     async function renderAdminTabContent(tab) {
         const container = document.getElementById('adminTabContent');
         if(!container) return;
@@ -390,24 +441,7 @@
             container.innerHTML=`<div><i class="fas fa-chart-line"></i> Active Session: ${state.loggedIn?'✅':'❌'}<br>Messages: ${msgs}<br>Custom Modules: ${state.customModules.length}<br>Logs: ${state.sessionsLog.slice(0,3).map(l=>l.action).join(',')}<br><button id="refreshStatsBtn" class="btn-outline">${t('refresh')}</button></div>`;
             document.getElementById('refreshStatsBtn')?.addEventListener('click', () => renderAdminTabContent('dashboard'));
         } else if(tab === 'codegen') {
-            const codes = await fetchActivationCodes();
-            const nowSec = Math.floor(Date.now() / 1000);
-            const codesTable = codes.map(c => {
-                let statusText = '', statusClass = '';
-                if (c.status === 'unused') { statusText = t('unused'); statusClass = 'status-unused'; }
-                else if (c.status === 'used') { statusText = t('used'); statusClass = 'status-used'; }
-                else { statusText = t('expired'); statusClass = 'status-expired'; }
-                let remainingStr = '';
-                if (c.remaining_seconds && c.remaining_seconds > 0) {
-                    const rem = c.remaining_seconds;
-                    const hours = Math.floor(rem / 3600);
-                    const mins = Math.floor((rem % 3600) / 60);
-                    remainingStr = hours>0? `${hours}h ${mins}m` : `${mins}m`;
-                } else if (c.status === 'used') remainingStr = 'Expired';
-                else remainingStr = '—';
-                return `<tr><td style="font-family:monospace">${c.code}</td><td>${c.duration_type}</td><td>${c.module_permissions}</td><td><span class="status-badge ${statusClass}">${statusText}</span></td><td>${remainingStr}</td><td><button class="btn-outline del-code-btn" data-code="${c.code}" style="padding:2px 12px;">${t('delete')}</button></td></tr>`;
-            }).join('');
-            // 模块复选框列表（所有可用模块）
+            // 构建静态部分（不包括表格行）
             const allModules = [...state.customModules.filter(m => m.enabled), ...coreModules];
             const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
             const moduleCheckboxes = uniqueModules.map(mod => `<label><input type="checkbox" value="${mod.id}" class="module-checkbox" checked> ${mod.name}</label>`).join('');
@@ -419,7 +453,13 @@
                     <div id="genResultBox" class="glass-panel" style="padding:16px;"></div>
                 </div>
                 <h4>Existing Codes</h4>
-                <div style="overflow-x:auto;"><table class="admin-table"><tr><th>Code</th><th>Duration</th><th>Modules</th><th>${t('status')}</th><th>${t('remaining')}</th><th></th></tr>${codesTable}</table></div>`;
+                <div style="overflow-x:auto;"><table class="admin-table">
+                    <thead><tr><th>Code</th><th>Duration</th><th>Modules</th><th>${t('status')}</th><th>${t('remaining')}</th><th></th></tr></thead>
+                    <tbody id="codeTableBody"></tbody>
+                </table></div>`;
+            // 刷新表格内容
+            await refreshCodeList();
+            // 绑定生成按钮事件
             document.getElementById('genCodeBtn')?.addEventListener('click', async () => {
                 const duration = document.getElementById('codeDuration').value;
                 const selectedModules = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
@@ -427,17 +467,10 @@
                 const newCode = await generateActivationCode(duration, selectedModules);
                 if (newCode) {
                     document.getElementById('genResultBox').innerHTML = `<code>${newCode}</code> <button class="btn-outline copyNewBtn">${t('copy')}</button>`;
-                    document.querySelector('.copyNewBtn')?.addEventListener('click', () => { navigator.clipboard.writeText(newCode); showToast("Copied!"); });
-                    renderAdminTabContent('codegen');
+                    document.querySelector('.copyNewBtn')?.addEventListener('click', () => { copyToClipboard(newCode); });
+                    await refreshCodeList(); // 刷新表格
                 }
             });
-            document.querySelectorAll('.del-code-btn').forEach(btn => btn.addEventListener('click', async () => {
-                const code = btn.dataset.code;
-                if(confirm(`Delete ${code}?`)) {
-                    const ok = await deleteActivationCode(code);
-                    if(ok) renderAdminTabContent('codegen');
-                }
-            }));
         } else if(tab === 'modulemgr') {
             const sorted = [...state.customModules].sort((a,b)=>(a.order||0)-(b.order||0));
             container.innerHTML = `<button id="newModuleBtn" class="btn-neon" style="margin-bottom:20px;"><i class="fas fa-plus"></i> Add Custom Module</button><div id="dragModulesContainer">${sorted.map(m=>`<div class="drag-module-item" data-id="${m.id}" draggable="true"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;"><i class="fas ${m.icon}" style="font-size:1.5rem;"></i> <strong>${m.name}</strong> <select class="mod-icon-select" data-id="${m.id}">${iconList.map(ic=>`<option value="${ic}" ${m.icon===ic?'selected':''}>${ic}</option>`).join('')}</select><input type="text" class="mod-url-edit" data-id="${m.id}" value="${m.url||''}" placeholder="URL"><input type="text" class="mod-name-edit" data-id="${m.id}" value="${m.name}"><label>Enable: <input type="checkbox" class="mod-enable-edit" data-id="${m.id}" ${m.enabled!==false?'checked':''}></label>${!m.core?`<button class="del-module" data-id="${m.id}">🗑️</button>`:'<span style="color:#ff5e2e;">core</span>'}</div></div>`).join('')}</div><p><i class="fas fa-arrows-alt"></i> Drag to reorder. Changes auto-save.</p>`;
@@ -499,7 +532,6 @@
             document.querySelectorAll('.admin-tab').forEach(btn => {
                 btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
             });
-            // 恢复上次激活的tab
             setActiveTab(currentAdminTab);
         }
         document.getElementById('exitAdminMode')?.addEventListener('click',()=>{ state.adminMode=false; render(); });
@@ -525,7 +557,6 @@
         loadCustomModules();
         await refreshSession();
         render();
-        // 每60秒刷新一次会话
         if(refreshTimer) clearInterval(refreshTimer);
         refreshTimer = setInterval(() => { if(!state.adminMode) refreshSession(); }, 60000);
         addTerminalLog("Warehouse terminal online", true);
