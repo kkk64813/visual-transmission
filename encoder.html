@@ -4,20 +4,21 @@
 <head>
 <script>
 (async()=>{
-  // 模块授权验证 – 使用后端实际模块名 B
+  // 模块授权验证 – 使用后端正确的模块名 ENCODER
   try {
-    const resp = await fetch('/api/check-module?module=B', {
+    const resp = await fetch('/api/check-module?module=ENCODER', {
       credentials: 'include'
     });
     const data = await resp.json();
     if (!data.allowed) {
       alert('Please activate your license.');
-      location.href = '/index.html';
+      // 跳转到仓库首页（适配子目录结构）
+      location.href = '../index.html';
       return;
     }
   } catch (err) {
     alert('License verification failed.');
-    location.href = '/index.html';
+    location.href = '../index.html';
   }
 })();
 </script>
