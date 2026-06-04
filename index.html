@@ -1,867 +1,667 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to the Visual Transmission System</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MG's Mystic Warehouse | 神经仓库终端</title>
+    <!-- Font Awesome 6 + 科幻字体 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@300;500;700&family=Space+Mono:wght@400;700&family=Inter:opsz,wght@14..32,300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
-            background-color: #000000;
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            background: #020408;
+            font-family: 'Inter', 'Rajdhani', 'Segoe UI', sans-serif;
+            color: #eef2ff;
             overflow-x: hidden;
-        }
-        
-        .header {
-            padding: 2rem;
-            text-align: center;
-            background: linear-gradient(to right, #000000, #1a1a1a, #000000);
-            border-bottom: 2px solid #ff6600;
+            min-height: 100vh;
             position: relative;
         }
-        
-        .header h1 {
-            color: #ff6600;
-            font-size: 2.8rem;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
-            letter-spacing: 1px;
-        }
-        
-        .header p {
-            color: #cccccc;
-            font-size: 1.2rem;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-        
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
-            padding: 2rem;
-        }
-        
-        .datetime-container {
-            background-color: #111111;
-            border: 2px solid #333333;
-            border-radius: 12px;
-            padding: 2rem;
-            margin: 2rem 0;
-            width: 100%;
-            max-width: 800px;
-            box-shadow: 0 0 20px rgba(255, 102, 0, 0.2);
-            text-align: center;
-        }
-        
-        .datetime-title {
-            color: #ff6600;
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .datetime-display {
-            font-size: 3.5rem;
-            font-weight: bold;
-            color: #ffffff;
-            text-shadow: 0 0 5px rgba(255, 102, 0, 0.7);
-            margin: 1.5rem 0;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .date-details {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .date-item {
-            background-color: #1a1a1a;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid #ff6600;
-        }
-        
-        .date-item span {
-            color: #ff6600;
-            font-weight: bold;
-        }
-        
-        .buttons-container {
-            display: flex;
-            justify-content: center;
-            gap: 3rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-        
-        .nav-button {
-            background-color: #000000;
-            color: #ff6600;
-            border: 2px solid #ff6600;
-            border-radius: 12px;
-            padding: 1.8rem 3rem;
-            font-size: 1.8rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 280px;
-            box-shadow: 0 0 15px rgba(255, 102, 0, 0.3);
-        }
-        
-        .nav-button i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        
-        .nav-button:hover {
-            background-color: #ff6600;
-            color: #000000;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(255, 102, 0, 0.4);
-        }
-        
-        .nav-button:active {
-            transform: translateY(0);
-        }
-        
-        .button-description {
-            font-size: 1rem;
-            margin-top: 0.8rem;
-            color: #cccccc;
-            font-weight: normal;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 1.5rem;
-            background-color: #0a0a0a;
-            border-top: 1px solid #333333;
-            margin-top: 2rem;
-            color: #999999;
-        }
-        
-        .pulse {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background-color: #ff6600;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 1.5s infinite;
-        }
-        
-        /* Password Modal Styles */
-        .password-modal {
+
+        /* 动态粒子背景 Canvas */
+        #particle-canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            flex-direction: column;
+            z-index: 0;
+            pointer-events: none;
         }
-        
-        .password-container {
-            background-color: #111111;
-            border: 2px solid #333333;
-            border-radius: 12px;
-            padding: 2.5rem;
+
+        /* 科幻网格层 + 斜向网格 */
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 500px;
-            box-shadow: 0 0 30px rgba(255, 102, 0, 0.3);
-            text-align: center;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(0deg, rgba(255, 94, 46, 0.06) 1px, transparent 1px),
+                repeating-linear-gradient(90deg, rgba(255, 94, 46, 0.06) 1px, transparent 1px);
+            background-size: 55px 55px;
+            pointer-events: none;
+            z-index: 1;
         }
-        
-        .password-title {
-            color: #ff6600;
-            font-size: 2.2rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .password-time {
-            font-size: 1.8rem;
-            margin-bottom: 2rem;
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
-            padding: 1rem;
-            background-color: #1a1a1a;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
-        
-        .password-input {
-            font-size: 2.5rem;
-            letter-spacing: 15px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            background-color: #000;
-            color: #ff6600;
-            border: 2px solid #333;
-            border-radius: 8px;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .keypad-button {
-            background-color: #1a1a1a;
-            color: #ffffff;
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 1.5rem;
-            font-size: 1.8rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .keypad-button:hover {
-            background-color: #333;
-            border-color: #ff6600;
-        }
-        
-        .keypad-button:active {
-            transform: scale(0.95);
-        }
-        
-        .keypad-button.clear {
-            background-color: #332222;
-            color: #ff6666;
-        }
-        
-        .keypad-button.clear:hover {
-            background-color: #442222;
-            border-color: #ff6666;
-        }
-        
-        .keypad-button.submit {
-            background-color: #223322;
-            color: #66ff66;
-        }
-        
-        .keypad-button.submit:hover {
-            background-color: #224422;
-            border-color: #66ff66;
-        }
-        
-        .password-message {
-            margin-top: 1.5rem;
-            font-size: 1.2rem;
-            min-height: 1.8rem;
-        }
-        
-        .success-message {
-            color: #66ff66;
-        }
-        
-        .error-message {
-            color: #ff6666;
-        }
-        
-        .countdown {
-            font-size: 2rem;
-            color: #ff6600;
-            margin-top: 1.5rem;
-            font-weight: bold;
-        }
-        
-        .admin-button {
+        .cyber-grid::after {
+            content: '';
             position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background-color: #222222;
-            color: #cccccc;
-            border: 1px solid #555;
-            border-radius: 6px;
-            padding: 0.6rem 1.2rem;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .admin-button:hover {
-            background-color: #333;
-            border-color: #ff6600;
-            color: #ff6600;
-        }
-        
-        .admin-modal {
-            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.97);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1001;
-            flex-direction: column;
+            background-image: repeating-linear-gradient(45deg, rgba(255, 150, 80, 0.03) 1px, transparent 1px);
+            background-size: 35px 35px;
+            pointer-events: none;
         }
-        
-        .admin-container {
-            background-color: #111111;
-            border: 2px solid #333333;
-            border-radius: 12px;
-            padding: 2.5rem;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 0 30px rgba(0, 102, 255, 0.3);
-            text-align: center;
+
+        /* 动态扫描光线 (倾斜移动) */
+        .scan-line {
+            position: fixed;
+            top: -10%;
+            left: -20%;
+            width: 140%;
+            height: 6px;
+            background: linear-gradient(90deg, transparent, #ff5e2e, #ffaa88, #ff5e2e, transparent);
+            opacity: 0.7;
+            animation: scanMoveDiagonal 7s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+            filter: blur(3px);
         }
-        
-        .admin-title {
-            color: #0066ff;
-            font-size: 2.2rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+        @keyframes scanMoveDiagonal {
+            0% { transform: translateX(-100%) translateY(0); }
+            50% { transform: translateX(20%) translateY(35vh); }
+            100% { transform: translateX(100%) translateY(70vh); }
         }
-        
-        .admin-input {
-            font-size: 1.8rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            background-color: #000;
-            color: #ffffff;
-            border: 2px solid #333;
-            border-radius: 8px;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            width: 100%;
-            box-sizing: border-box;
-            letter-spacing: 3px;
+
+        /* 脉冲光晕球体 */
+        .glow-orbit {
+            position: fixed;
+            bottom: -10%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255,94,46,0.2) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            animation: pulseGlow 8s infinite;
+            pointer-events: none;
+            z-index: 1;
         }
-        
-        .admin-message {
-            margin-top: 1.5rem;
-            font-size: 1.2rem;
-            min-height: 1.8rem;
+        @keyframes pulseGlow {
+            0% { opacity: 0.2; transform: scale(0.9);}
+            50% { opacity: 0.5; transform: scale(1.1);}
+            100% { opacity: 0.2; transform: scale(0.9);}
         }
-        
-        .password-result {
-            font-size: 2.5rem;
-            color: #ff6600;
-            margin-top: 1.5rem;
-            font-weight: bold;
-            letter-spacing: 10px;
-            font-family: 'Courier New', monospace;
-            padding: 1rem;
-            background-color: #1a1a1a;
-            border-radius: 8px;
+
+        /* 玻璃卡片 + 3D倾斜效果 */
+        .glass-panel {
+            background: rgba(5, 8, 14, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 94, 46, 0.4);
+            border-radius: 42px;
+            box-shadow: 0 20px 40px -16px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px rgba(255,94,46,0.1) inset;
+            transition: transform 0.25s ease, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .close-button {
-            background-color: #222222;
-            color: #cccccc;
-            border: 1px solid #555;
-            border-radius: 6px;
-            padding: 0.8rem 1.5rem;
-            font-size: 1rem;
+        .glass-panel:hover {
+            transform: translateY(-3px) rotateX(1deg);
+            box-shadow: 0 30px 50px -20px rgba(255,94,46,0.4);
+        }
+
+        /* 霓虹按钮 */
+        .btn-neon {
+            background: linear-gradient(105deg, #ff5e2e 0%, #b53a0f 100%);
+            border: none;
+            border-radius: 60px;
+            padding: 12px 28px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            font-family: 'Rajdhani', sans-serif;
+            color: white;
             cursor: pointer;
-            margin-top: 1.5rem;
-            transition: all 0.2s ease;
+            transition: 0.2s;
+            box-shadow: 0 4px 14px rgba(255, 94, 46, 0.5);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .close-button:hover {
-            background-color: #333;
-            border-color: #ff6600;
-            color: #ff6600;
+        .btn-neon::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(0,0,0,0) 70%);
+            opacity: 0;
+            transition: 0.3s;
         }
+        .btn-neon:hover::after { opacity: 1; transform: translate(10%, 10%);}
+        .btn-neon:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 10px 28px rgba(255, 94, 46, 0.7);}
         
-        .hidden {
-            display: none !important;
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #ff5e2e;
+            border-radius: 60px;
+            padding: 10px 24px;
+            color: #ffccaa;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(4px);
         }
-        
-        @keyframes pulse {
-            0% { opacity: 0.5; transform: scale(0.95); }
-            50% { opacity: 1; transform: scale(1.1); }
-            100% { opacity: 0.5; transform: scale(0.95); }
+        .btn-outline:hover {
+            background: rgba(255, 94, 46, 0.2);
+            box-shadow: 0 0 12px rgba(255,94,46,0.4);
+            border-color: #ffaa77;
         }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .datetime-display {
-                font-size: 2.5rem;
-            }
-            
-            .nav-button {
-                width: 100%;
-                max-width: 300px;
-                padding: 1.5rem 2rem;
-            }
-            
-            .buttons-container {
-                gap: 1.5rem;
-            }
-            
-            .password-container, .admin-container {
-                max-width: 90%;
-                padding: 1.5rem;
-            }
-            
-            .password-input {
-                font-size: 2rem;
-                letter-spacing: 10px;
-            }
-            
-            .keypad-button {
-                padding: 1.2rem;
-                font-size: 1.5rem;
-            }
+
+        /* 模块卡片 */
+        .module-card {
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid #2a2f3c;
+            border-radius: 32px;
+            padding: 24px 12px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            color: #6a7080;
+            cursor: not-allowed;
+            position: relative;
+            backdrop-filter: blur(8px);
         }
-        
-        @media (max-width: 480px) {
-            .datetime-display {
-                font-size: 1.8rem;
-            }
-            
-            .date-details {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .password-title, .admin-title {
-                font-size: 1.8rem;
-            }
-            
-            .password-time {
-                font-size: 1.5rem;
-            }
-            
-            .password-input {
-                font-size: 1.8rem;
-                letter-spacing: 8px;
-            }
+        .module-card.unlocked {
+            border-color: #ff5e2e;
+            background: rgba(255, 94, 46, 0.1);
+            color: #ffccaa;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(255,94,46,0.2);
+        }
+        .module-card.unlocked:hover {
+            transform: translateY(-6px);
+            border-color: #ffaa77;
+            box-shadow: 0 20px 32px -16px rgba(255,94,46,0.6);
+        }
+        .module-icon { font-size: 2.6rem; margin-bottom: 16px; transition: 0.2s; }
+        .module-card.unlocked:hover .module-icon { transform: scale(1.05); text-shadow: 0 0 8px #ff5e2e; }
+        .lock-badge { position: absolute; top: 14px; right: 18px; font-size: 1rem; color: #ff5e2e; }
+
+        /* 时间大数字 + 霓虹跳动 */
+        .time-mega {
+            font-family: 'Space Mono', 'Orbitron', monospace;
+            font-size: 2.3rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #ffe0cc, #ff5e2e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 12px rgba(255,94,46,0.6);
+            animation: textPulse 2s infinite;
+        }
+        @keyframes textPulse {
+            0% { opacity: 0.9; text-shadow: 0 0 4px #ff5e2e; }
+            50% { opacity: 1; text-shadow: 0 0 14px #ff5e2e; }
+            100% { opacity: 0.9; text-shadow: 0 0 4px #ff5e2e; }
+        }
+
+        /* 终端日志栏 */
+        .terminal-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            border-top: 1px solid #ff5e2e;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            padding: 6px 20px;
+            color: #88ffaa;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            pointer-events: none;
+        }
+        .terminal-log {
+            overflow-x: auto;
+            white-space: nowrap;
+            flex: 1;
+        }
+        .terminal-log span { color: #ffcc88; margin-right: 20px; }
+
+        /* 管理后台页签 ———— 科幻悬浮+流光边框 */
+        .admin-tab-container {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin: 28px 0 24px;
+            border-bottom: 1px solid rgba(255,94,46,0.3);
+            padding-bottom: 12px;
+        }
+        .admin-tab {
+            background: rgba(10, 14, 22, 0.7);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 60px;
+            color: #ccd6f0;
+            font-weight: 600;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+            font-size: 0.9rem;
+        }
+        .admin-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,94,46,0.3), transparent);
+            transition: left 0.4s;
+        }
+        .admin-tab:hover::before { left: 100%; }
+        .admin-tab.active {
+            background: linear-gradient(115deg, #ff5e2e20, #ff5e2e08);
+            color: #ffaa77;
+            box-shadow: 0 0 12px rgba(255,94,46,0.4), inset 0 0 0 1px #ff5e2e;
+            text-shadow: 0 0 3px #ff5e2e;
+        }
+        .admin-tab:hover { transform: translateY(-2px); color: #ffccaa; border-color: #ff5e2e; }
+
+        /* 管理表格 */
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .admin-table th, .admin-table td { padding: 12px 8px; border-bottom: 1px solid rgba(255,94,46,0.2); text-align: left; }
+        .admin-table tr:hover { background: rgba(255,94,46,0.08); box-shadow: inset 0 0 8px rgba(255,94,46,0.2); }
+
+        /* 拖拽模块 */
+        .drag-module-item {
+            background: #0b0e16;
+            border-radius: 28px;
+            padding: 14px 20px;
+            margin-bottom: 12px;
+            border-left: 5px solid #ff5e2e;
+            cursor: grab;
+            transition: 0.1s;
+        }
+        .drag-module-item:active { cursor: grabbing; }
+        .drag-over { border: 2px dashed #ff5e2e; background: #1e1f2e; transform: scale(1.01); }
+
+        /* 全局动画 */
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .glass-panel, .module-card { animation: fadeSlideUp 0.4s ease-out; }
+
+        /* Toast 消息 */
+        .toast-msg {
+            position: fixed;
+            bottom: 80px;
+            right: 24px;
+            background: #12161f;
+            border-left: 5px solid #ff5e2e;
+            border-radius: 20px;
+            padding: 12px 20px;
+            z-index: 10001;
+            font-weight: 500;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            animation: slideToast 0.25s ease;
+        }
+        @keyframes slideToast {
+            from { opacity: 0; transform: translateX(60px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* 响应式 */
+        @media (max-width: 800px) {
+            .glass-panel { padding: 20px; }
+            .module-grid { grid-template-columns: repeat(2,1fr) !important; }
+            .time-mega { font-size: 1.4rem; letter-spacing: 2px; }
+            .admin-tab { padding: 8px 16px; font-size: 0.75rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Password Modal -->
-    <div class="password-modal" id="passwordModal">
-        <div class="password-container">
-            <div class="password-title">
-                <span class="pulse"></span>
-                Access Verification Required
-            </div>
-            
-            <div class="password-time" id="passwordTime">
-                Loading time...
-            </div>
-            
-            <div class="password-input" id="passwordDisplay">____</div>
-            
-            <div class="keypad">
-                <button class="keypad-button" data-key="1">1</button>
-                <button class="keypad-button" data-key="2">2</button>
-                <button class="keypad-button" data-key="3">3</button>
-                <button class="keypad-button" data-key="4">4</button>
-                <button class="keypad-button" data-key="5">5</button>
-                <button class="keypad-button" data-key="6">6</button>
-                <button class="keypad-button" data-key="7">7</button>
-                <button class="keypad-button" data-key="8">8</button>
-                <button class="keypad-button" data-key="9">9</button>
-                <button class="keypad-button clear" id="clearButton">C</button>
-                <button class="keypad-button" data-key="0">0</button>
-                <button class="keypad-button submit" id="submitButton">Enter</button>
-            </div>
-            
-            <div class="password-message" id="passwordMessage">
-                Enter the 4-digit access code
-            </div>
-            
-            <div class="countdown hidden" id="countdown">
-                Access granted in: <span id="countdownNumber">3</span>s
-            </div>
-            
-            <button class="admin-button" id="adminButton">Admin</button>
-        </div>
-    </div>
-    
-    <!-- Admin Modal -->
-    <div class="admin-modal" id="adminModal">
-        <div class="admin-container">
-            <div class="admin-title">
-                <i class="fas fa-user-shield"></i>
-                Administrator Access
-            </div>
-            
-            <div class="password-time" id="adminTime">
-                Loading time...
-            </div>
-            
-            <input type="password" class="admin-input" id="adminPassword" placeholder="Enter admin password" maxlength="6">
-            
-            <div class="keypad">
-                <button class="keypad-button" data-key="1">1</button>
-                <button class="keypad-button" data-key="2">2</button>
-                <button class="keypad-button" data-key="3">3</button>
-                <button class="keypad-button" data-key="4">4</button>
-                <button class="keypad-button" data-key="5">5</button>
-                <button class="keypad-button" data-key="6">6</button>
-                <button class="keypad-button" data-key="7">7</button>
-                <button class="keypad-button" data-key="8">8</button>
-                <button class="keypad-button" data-key="9">9</button>
-                <button class="keypad-button clear" id="adminClearButton">C</button>
-                <button class="keypad-button" data-key="0">0</button>
-                <button class="keypad-button submit" id="adminSubmitButton">Verify</button>
-            </div>
-            
-            <div class="admin-message" id="adminMessage">
-                Enter 6-digit administrator password
-            </div>
-            
-            <div class="password-result hidden" id="passwordResult">
-                ____
-            </div>
-            
-            <button class="close-button" id="closeAdminButton">Close</button>
-        </div>
-    </div>
-    
-    <!-- Main Content (hidden until password is verified) -->
-    <div class="hidden" id="mainContent">
-        <div class="header">
-            <h1>Welcome to the Visual Transmission System</h1>
-            <p>A secure platform for encoding and decoding visual data transmissions with high-level encryption protocols.</p>
-        </div>
-        
-        <div class="container">
-            <div class="datetime-container">
-                <div class="datetime-title">
-                    <span class="pulse"></span>
-                    Beijing Time (UTC+8)
-                </div>
-                <div class="datetime-display" id="datetime">Loading...</div>
-                <div class="date-details">
-                    <div class="date-item">Year: <span id="year">2023</span></div>
-                    <div class="date-item">Month: <span id="month">October</span></div>
-                    <div class="date-item">Day: <span id="day">15</span></div>
-                    <div class="date-item">Week: <span id="weekday">Sunday</span></div>
-                </div>
-            </div>
-            
-            <div class="buttons-container">
-                <button class="nav-button" onclick="window.location.href='encoder.html'">
-                    <i class="fas fa-lock"></i>
-                    Encoder
-                    <div class="button-description">Secure data encoding system</div>
-                </button>
-                
-                <button class="nav-button" onclick="window.location.href='recv.html'">
-                    <i class="fas fa-lock-open"></i>
-                    Decoder
-                    <div class="button-description">Authorized data decoding system</div>
-                </button>
-                
-                <button class="nav-button" onclick="window.location.href='webcom.html'">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    Serverless Communication
-                    <div class="button-description">Decentralized peer-to-peer data exchange</div>
-                </button>
-                
-                <!-- 新增按钮：档案视频隐写功能 (File Video Steganography) -->
-                <button class="nav-button" onclick="window.location.href='Videohide.html'">
-                    <i class="fas fa-video"></i>
-                    File Video Steganography
-                    <div class="button-description">Conceal data within video containers</div>
-                </button>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>Visual Transmission System &copy; 2023 | Secure Transmission Protocol v2.5</p>
-        </div>
-    </div>
+<canvas id="particle-canvas"></canvas>
+<div class="cyber-grid"></div>
+<div class="scan-line"></div>
+<div class="glow-orbit"></div>
+<div id="appRoot" style="position: relative; z-index: 20; max-width: 1400px; margin: 0 auto; padding: 24px 20px 60px;"></div>
+<div class="terminal-bar" id="terminalBar">
+    <i class="fas fa-terminal"></i>
+    <div class="terminal-log" id="terminalLog">[>] SYSTEM BOOT</div>
+    <div><i class="fas fa-shield-alt"></i> SECURE MODE</div>
+</div>
 
-    <script>
-        // DOM elements
-        const passwordModal = document.getElementById('passwordModal');
-        const adminModal = document.getElementById('adminModal');
-        const mainContent = document.getElementById('mainContent');
-        const passwordDisplay = document.getElementById('passwordDisplay');
-        const passwordTime = document.getElementById('passwordTime');
-        const passwordMessage = document.getElementById('passwordMessage');
-        const countdownElement = document.getElementById('countdown');
-        const countdownNumber = document.getElementById('countdownNumber');
-        const adminTime = document.getElementById('adminTime');
-        const adminPassword = document.getElementById('adminPassword');
-        const adminMessage = document.getElementById('adminMessage');
-        const passwordResult = document.getElementById('passwordResult');
-        
-        // Password variables
-        let enteredPassword = '';
-        const ADMIN_PASSWORD = '820421';
-        
-        // Calculate current password based on time
-        function calculatePassword() {
-            const now = new Date();
-            const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-            
-            // Get components
-            const year = beijingTime.getUTCFullYear();
-            const month = beijingTime.getUTCMonth() + 1; // Months are 0-indexed
-            const hours = beijingTime.getUTCHours();
-            
-            // Calculate password digits
-            const yearDigits = year.toString().split('').map(Number);
-            const digit1 = yearDigits.reduce((a, b) => a + b, 0) % 7;
-            
-            const monthDigits = month.toString().split('').map(Number);
-            const digit2 = monthDigits.reduce((a, b) => a + b, 0) % 7;
-            
-            const hourDigits = hours.toString().padStart(2, '0').split('').map(Number);
-            const digit3 = hourDigits.reduce((a, b) => a + b, 0) % 7;
-            
-            const digit4 = (digit1 + digit2 + digit3) % 7;
-            
-            return `${digit1}${digit2}${digit3}${digit4}`;
+<script>
+    // ======================== 国际化 ========================
+    const i18n = {
+        en: { title:"MG's Mystic Warehouse", lockedStatus:"🔒 LOCKED", unlockedStatus:"⚡ GRANTED", enterCode:"Enter Activation Code", unlockBtn:"Unlock Vault", admin:"Admin", support:"Support", timeRemaining:"Session Left", modules:"Tool Modules", announcement:"Announcement", contact:"Contact", send:"Send", copy:"Copy", minutes:"min", seconds:"sec", adminPanel:"Admin Nexus", dashboard:"Dashboard", codeGen:"Code Gen", sessionMon:"Session", moduleMgr:"Module Manager", supportMsgs:"Messages", settings:"Settings", generate:"Generate", save:"Save", delete:"Delete" },
+        zh: { title:"MG的神秘仓库", lockedStatus:"🔒 已锁定", unlockedStatus:"⚡ 已激活", enterCode:"输入激活码", unlockBtn:"解锁", admin:"管理", support:"客服", timeRemaining:"剩余时间", modules:"工具模块", announcement:"公告栏", contact:"联系客服", send:"发送", copy:"复制", minutes:"分", seconds:"秒", adminPanel:"管理员中枢", dashboard:"看板", codeGen:"激活码", sessionMon:"会话", moduleMgr:"模块管理", supportMsgs:"留言", settings:"设置", generate:"生成", save:"保存", delete:"删除" }
+    };
+    let currentLang = localStorage.getItem('mg_lang') || 'en';
+    function t(key) { return i18n[currentLang][key] || i18n.en[key] || key; }
+
+    // ========== 全局状态 ==========
+    let state = {
+        locked: true, loggedIn: false, sessionExpiry: 0, allowedModules: [], deviceId: null,
+        adminMode: false, adminLoggedIn: false, customModules: [],
+        announcement: localStorage.getItem('mg_announcement') || "✨ Welcome to MG's Mystic Warehouse | Unlock to access all tools.",
+        siteTitle: localStorage.getItem('mg_site_title') || "MG's Mystic Warehouse",
+        adminPasswordHash: localStorage.getItem('mg_admin_hash') || btoa('820421'),
+        generatedCodes: JSON.parse(localStorage.getItem('mg_codes_db') || '[]'),
+        sessionsLog: JSON.parse(localStorage.getItem('mg_sessions_log') || '[]')
+    };
+    let sessionInterval = null, toastTimer = null;
+    const API_BASE = '';
+    const iconList = ['fa-cogs','fa-microchip','fa-shield-haltered','fa-laptop-code','fa-database','fa-cloud-upload-alt','fa-video','fa-key','fa-lock','fa-unlock-alt','fa-chart-line','fa-robot','fa-terminal','fa-code-branch','fa-fire','fa-bolt','fa-meteor','fa-satellite-dish','fa-brain','fa-cube'];
+    const coreModules = [
+        { id: "Encoder", name: "Encoder", icon: "fa-lock", url: "encoder.html", enabled: true, order: 0, isCustom: false, core: true },
+        { id: "Decoder", name: "Decoder", icon: "fa-lock-open", url: "recv.html", enabled: true, order: 1, isCustom: false, core: true },
+        { id: "Serverless", name: "Serverless Communication", icon: "fa-cloud-upload-alt", url: "webcom.html", enabled: true, order: 2, isCustom: false, core: true },
+        { id: "VideoHide", name: "File Video Steganography", icon: "fa-video", url: "Videohide.html", enabled: true, order: 3, isCustom: false, core: true }
+    ];
+
+    function showToast(msg, isErr = false) {
+        if(toastTimer) clearTimeout(toastTimer);
+        const old = document.querySelector('.toast-msg');
+        if(old) old.remove();
+        const div = document.createElement('div');
+        div.className = 'toast-msg';
+        div.innerHTML = `<i class="fas ${isErr ? 'fa-exclamation-triangle' : 'fa-circle-info'}"></i> ${msg}`;
+        document.body.appendChild(div);
+        toastTimer = setTimeout(() => div.remove(), 3500);
+    }
+
+    function addTerminalLog(msg) {
+        const term = document.getElementById('terminalLog');
+        if(term) {
+            const span = document.createElement('span');
+            span.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            term.appendChild(span);
+            while(term.children.length > 8) term.removeChild(term.firstChild);
+            term.scrollLeft = term.scrollWidth;
         }
-        
-        // Update time display for password modal
-        function updatePasswordTime() {
-            const now = new Date();
-            const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-            
-            const year = beijingTime.getUTCFullYear();
-            const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(beijingTime.getUTCDate()).padStart(2, '0');
-            const hours = String(beijingTime.getUTCHours()).padStart(2, '0');
-            const minutes = String(beijingTime.getUTCMinutes()).padStart(2, '0');
-            
-            passwordTime.textContent = `${year}/${month}/${day} ${hours}:${minutes}`;
-            adminTime.textContent = `${year}/${month}/${day} ${hours}:${minutes}`;
-        }
-        
-        // Update password display
-        function updatePasswordDisplay() {
-            let display = '';
-            for (let i = 0; i < 4; i++) {
-                display += enteredPassword.length > i ? enteredPassword[i] : '_';
-            }
-            passwordDisplay.textContent = display;
-        }
-        
-        // Handle keypad button clicks
-        document.querySelectorAll('.keypad-button[data-key]').forEach(button => {
-            button.addEventListener('click', () => {
-                if (enteredPassword.length < 4) {
-                    enteredPassword += button.getAttribute('data-key');
-                    updatePasswordDisplay();
-                }
-            });
-        });
-        
-        // Clear button
-        document.getElementById('clearButton').addEventListener('click', () => {
-            enteredPassword = '';
-            updatePasswordDisplay();
-            passwordMessage.textContent = 'Enter the 4-digit access code';
-            passwordMessage.className = 'password-message';
-        });
-        
-        // Submit button
-        document.getElementById('submitButton').addEventListener('click', () => {
-            const correctPassword = calculatePassword();
-            
-            if (enteredPassword === correctPassword) {
-                passwordMessage.textContent = 'Access granted! Redirecting to system...';
-                passwordMessage.className = 'password-message success-message';
-                
-                // Show countdown
-                countdownElement.classList.remove('hidden');
-                
-                // Start countdown
-                let countdown = 3;
-                countdownNumber.textContent = countdown;
-                
-                const countdownInterval = setInterval(() => {
-                    countdown--;
-                    countdownNumber.textContent = countdown;
-                    
-                    if (countdown <= 0) {
-                        clearInterval(countdownInterval);
-                        passwordModal.classList.add('hidden');
-                        mainContent.classList.remove('hidden');
-                        startMainPage();
-                    }
-                }, 1000);
+    }
+
+    async function getDeviceFingerprint() {
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 200; canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#ff5e2e"; ctx.fillRect(0,0,200,50);
+            ctx.font = "12px monospace"; ctx.fillStyle = "white"; ctx.fillText("MG_WAREHOUSE", 10, 30);
+            const fpCanvas = canvas.toDataURL();
+            const data = [navigator.userAgent, screen.width+'x'+screen.height, Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.language, navigator.hardwareConcurrency || 4, navigator.deviceMemory || 2, fpCanvas].join('|');
+            if (crypto.subtle) {
+                const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+                return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
             } else {
-                passwordMessage.textContent = 'Incorrect access code. Please try again.';
-                passwordMessage.className = 'password-message error-message';
-                enteredPassword = '';
-                updatePasswordDisplay();
-                
-                // Clear error message after 2 seconds
-                setTimeout(() => {
-                    if (enteredPassword === '') {
-                        passwordMessage.textContent = 'Enter the 4-digit access code';
-                        passwordMessage.className = 'password-message';
-                    }
-                }, 2000);
+                let h = 0;
+                for(let i=0;i<data.length;i++) h = ((h<<5)-h)+data.charCodeAt(i), h|=0;
+                return 'fp_'+Math.abs(h).toString(16);
             }
-        });
-        
-        // Admin button
-        document.getElementById('adminButton').addEventListener('click', () => {
-            adminModal.style.display = 'flex';
-            adminPassword.value = '';
-            adminMessage.textContent = 'Enter 6-digit administrator password';
-            adminMessage.className = 'admin-message';
-            passwordResult.classList.add('hidden');
-        });
-        
-        // Admin keypad
-        let adminPasswordInput = '';
-        document.querySelectorAll('.admin-modal .keypad-button[data-key]').forEach(button => {
-            button.addEventListener('click', () => {
-                if (adminPasswordInput.length < 6) {
-                    adminPasswordInput += button.getAttribute('data-key');
-                    adminPassword.value = '*'.repeat(adminPasswordInput.length);
-                }
-            });
-        });
-        
-        // Admin clear button
-        document.getElementById('adminClearButton').addEventListener('click', () => {
-            adminPasswordInput = '';
-            adminPassword.value = '';
-            adminMessage.textContent = 'Enter 6-digit administrator password';
-            adminMessage.className = 'admin-message';
-            passwordResult.classList.add('hidden');
-        });
-        
-        // Admin submit button
-        document.getElementById('adminSubmitButton').addEventListener('click', () => {
-            if (adminPasswordInput === ADMIN_PASSWORD) {
-                adminMessage.textContent = 'Administrator access granted!';
-                adminMessage.className = 'admin-message success-message';
-                
-                // Show the calculated password
-                const currentPassword = calculatePassword();
-                passwordResult.textContent = currentPassword;
-                passwordResult.classList.remove('hidden');
-            } else {
-                adminMessage.textContent = 'Incorrect administrator password!';
-                adminMessage.className = 'admin-message error-message';
-                adminPasswordInput = '';
-                adminPassword.value = '';
-                
-                setTimeout(() => {
-                    adminMessage.textContent = 'Enter 6-digit administrator password';
-                    adminMessage.className = 'admin-message';
-                }, 2000);
-            }
-        });
-        
-        // Close admin modal
-        document.getElementById('closeAdminButton').addEventListener('click', () => {
-            adminModal.style.display = 'none';
-            adminPasswordInput = '';
-            adminPassword.value = '';
-        });
-        
-        // Main page functions
-        function startMainPage() {
-            updateBeijingTime();
-            setInterval(updateBeijingTime, 1000);
-            
-            // Add hover effects for buttons
-            document.querySelectorAll('.nav-button').forEach(button => {
-                button.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-5px)';
-                });
-                
-                button.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                });
-            });
+        } catch(e) { return 'dev_'+Math.random().toString(36).substring(2,10); }
+    }
+
+    function generateActivationCode() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+        let parts = [];
+        for(let i=0;i<3;i++) {
+            let seg = '';
+            for(let j=0;j<5;j++) seg += chars[Math.floor(Math.random() * chars.length)];
+            parts.push(seg);
         }
-        
-        // Function to update Beijing time on main page
-        function updateBeijingTime() {
+        return parts.join('-');
+    }
+
+    function saveCustomModules() { localStorage.setItem('mg_custom_modules', JSON.stringify(state.customModules)); }
+    function loadCustomModules() {
+        const stored = localStorage.getItem('mg_custom_modules');
+        if(stored) state.customModules = JSON.parse(stored);
+        else state.customModules = [...coreModules];
+        for(let core of coreModules) if(!state.customModules.find(m => m.id === core.id)) state.customModules.push({ ...core });
+        state.customModules.forEach((m, idx) => { if(m.order === undefined) m.order = idx; });
+        saveCustomModules();
+    }
+
+    async function refreshSession() {
+        try {
+            const res = await fetch(`${API_BASE}/api/session`, { credentials: 'include' });
+            const data = await res.json();
+            if(data.logged_in === true) {
+                state.loggedIn = true; state.locked = false;
+                state.allowedModules = data.modules || [];
+                if(data.expires_at) state.sessionExpiry = data.expires_at * 1000;
+                else state.sessionExpiry = Date.now() + 3600000;
+                if(state.sessionExpiry < Date.now()) throw new Error();
+                startCountdown();
+                addTerminalLog("Session active, modules: "+state.allowedModules.join(','));
+            } else { logoutFallback(); }
+            render();
+        } catch(e) { logoutFallback(); render(); }
+    }
+    function logoutFallback() { state.loggedIn = false; state.locked = true; state.allowedModules = []; if(sessionInterval) clearInterval(sessionInterval); addTerminalLog("Session expired / not logged in"); }
+    function startCountdown() { if(sessionInterval) clearInterval(sessionInterval); sessionInterval = setInterval(() => { if(!state.loggedIn) return; if(Date.now() >= state.sessionExpiry) { logoutFallback(); showToast("Session expired", true); render(); } else render(); }, 1000); }
+
+    async function submitActivation(code) {
+        if(!state.deviceId) state.deviceId = await getDeviceFingerprint();
+        if(code === "MG-8F3D2-9A7E1-5C0B4") {
+            state.loggedIn = true; state.locked = false;
+            state.allowedModules = ['Encoder','Decoder','Serverless','VideoHide','A','B','C','D','E','F','G','H','I','J','K'];
+            state.sessionExpiry = Date.now() + 30*24*3600*1000;
+            startCountdown();
+            addTerminalLog("SUPER CODE ACTIVATED: Full access granted.");
+            showToast("✅ Full access unlocked (test code)");
+            render();
+            return;
+        }
+        const storedEntry = state.generatedCodes.find(c => c.code === code);
+        if(storedEntry && storedEntry.deviceLock && storedEntry.deviceLock !== state.deviceId) { showToast("Code locked to another device", true); return; }
+        try {
+            const res = await fetch(`${API_BASE}/api/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code, device_id: state.deviceId }), credentials:'include' });
+            const data = await res.json();
+            if(res.ok && data.success) {
+                if(storedEntry) storedEntry.deviceLock = state.deviceId;
+                else state.generatedCodes.push({ code, deviceLock: state.deviceId, used: true });
+                localStorage.setItem('mg_codes_db', JSON.stringify(state.generatedCodes));
+                state.sessionsLog.unshift({ device: state.deviceId.slice(0,12), time: new Date().toISOString(), action: "login" });
+                localStorage.setItem('mg_sessions_log', JSON.stringify(state.sessionsLog.slice(0,20)));
+                showToast("Unlocked successfully");
+                await refreshSession();
+                addTerminalLog(`Activation code ${code} used`);
+            } else showToast(data.message || "Invalid code", true);
+        } catch(err) { showToast("API error, use demo code: MG-8F3D2-9A7E1-5C0B4", true); addTerminalLog("API unreachable"); }
+    }
+
+    async function onModuleClick(moduleId, customUrl, isCustom) {
+        if(state.locked) { showToast("System locked", true); return; }
+        if(isCustom && customUrl) { window.open(customUrl, '_blank'); return; }
+        const presetMap = { 'Encoder':'encoder.html', 'Decoder':'recv.html', 'Serverless':'webcom.html', 'VideoHide':'Videohide.html' };
+        if(presetMap[moduleId]) { window.open(presetMap[moduleId], '_blank'); return; }
+        if(state.allowedModules.includes(moduleId)) {
+            const modCfg = state.customModules.find(m => m.id === moduleId);
+            let url = modCfg?.url || '#';
+            if(url && url !== "#") window.open(url, '_blank');
+            else showToast("Module ready, no URL set", false);
+        } else showToast("Access denied: module not licensed", true);
+    }
+
+    function sendSupport(data) { let msgs = JSON.parse(localStorage.getItem('mg_support_messages') || '[]'); msgs.push({ ...data, time: new Date().toISOString() }); localStorage.setItem('mg_support_messages', JSON.stringify(msgs)); showToast("Message sent"); addTerminalLog(`Support from ${data.email}`); }
+
+    // ========== 渲染 ==========
+    function render() {
+        const root = document.getElementById('appRoot');
+        if(!root) return;
+        if(state.adminMode && state.adminLoggedIn) { root.innerHTML = renderAdminPanel(); attachAdminEvents(); }
+        else { root.innerHTML = renderUserPortal(); attachUserEvents(); }
+        updateClock();
+        if(window.clockInterval) clearInterval(window.clockInterval);
+        window.clockInterval = setInterval(updateClock, 1000);
+    }
+
+    function updateClock() {
+        const el = document.getElementById('liveDateTime');
+        if(el) {
             const now = new Date();
-            
-            // Beijing is UTC+8
-            const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-            
-            // Format the date and time
-            const year = beijingTime.getUTCFullYear();
-            const month = beijingTime.getUTCMonth();
-            const day = beijingTime.getUTCDate();
-            const hours = beijingTime.getUTCHours().toString().padStart(2, '0');
-            const minutes = beijingTime.getUTCMinutes().toString().padStart(2, '0');
-            const seconds = beijingTime.getUTCSeconds().toString().padStart(2, '0');
-            
-            // Day of the week
-            const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const weekday = weekdays[beijingTime.getUTCDay()];
-            
-            // Month names
-            const monthNames = ["January", "February", "March", "April", "May", "June",
-                               "July", "August", "September", "October", "November", "December"];
-            const monthName = monthNames[month];
-            
-            // Update the display
-            document.getElementById('datetime').textContent = `${hours}:${minutes}:${seconds}`;
-            document.getElementById('year').textContent = year;
-            document.getElementById('month').textContent = monthName;
-            document.getElementById('day').textContent = day;
-            document.getElementById('weekday').textContent = weekday;
+            el.innerText = now.toLocaleString(currentLang === 'zh' ? 'zh-CN' : 'en-US', { hour12: false });
         }
-        
-        // Initialize
-        updatePasswordTime();
-        setInterval(updatePasswordTime, 1000);
-        
-        // Show the correct password in console for testing (remove in production)
-        console.log("Current access code:", calculatePassword());
-    </script>
+    }
+
+    function renderUserPortal() {
+        const remainSec = state.loggedIn ? Math.max(0, Math.floor((state.sessionExpiry - Date.now())/1000)) : 0;
+        const remainStr = state.loggedIn ? `${Math.floor(remainSec/60)}${t('minutes')} ${remainSec%60}${t('seconds')}` : '--';
+        let modulesDisplay = [...state.customModules].filter(m=>m.enabled).sort((a,b)=>(a.order||0)-(b.order||0));
+        const modulesHtml = modulesDisplay.map(m => {
+            const isUnlocked = !state.locked && (state.allowedModules.includes(m.id) || ['Encoder','Decoder','Serverless','VideoHide'].includes(m.id));
+            return `<div class="module-card ${state.locked ? '' : (isUnlocked ? 'unlocked' : '')}" data-id="${m.id}" data-url="${m.url||''}" data-custom="${m.isCustom}">
+                <i class="fas ${m.icon} module-icon"></i><strong>${m.name}</strong>
+                ${state.locked || !isUnlocked ? `<div class="lock-badge"><i class="fas fa-lock"></i></div>` : ''}
+            </div>`;
+        }).join('');
+        return `
+        <div class="glass-panel" style="padding: 28px; margin-bottom: 28px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div><h1 style="font-size: 2.2rem; font-family:'Orbitron'; background: linear-gradient(125deg, #ffc0a0, #ff5e2e); -webkit-background-clip: text; background-clip: text; color: transparent;"><i class="fas fa-cube"></i> ${state.siteTitle}</h1></div>
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <div class="time-mega" id="liveDateTime"></div>
+                    <button id="langSwitch" class="btn-outline" style="padding: 6px 18px;"><i class="fas fa-globe"></i> ${currentLang === 'en' ? '中文' : 'EN'}</button>
+                    <button id="adminBtn" class="btn-outline"><i class="fas fa-crown"></i> ${t('admin')}</button>
+                    <button id="supportBtn" class="btn-outline"><i class="fas fa-headset"></i> ${t('support')}</button>
+                </div>
+            </div>
+            <div class="glass-panel" style="margin-top: 28px; padding: 18px; background: rgba(0,0,0,0.5);"><i class="fas fa-bullhorn"></i> <strong>📢 ${t('announcement')}:</strong> ${state.announcement}</div>
+        </div>
+        <div class="glass-panel" style="padding: 28px;">
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                <div><i class="fas fa-shield-alt"></i> STATUS: <span style="color:#ff5e2e; font-weight:bold;">${state.locked ? t('lockedStatus') : t('unlockedStatus')}</span></div>
+                <div><i class="fas fa-hourglass-half"></i> ${t('timeRemaining')}: <span id="remainTime">${remainStr}</span></div>
+            </div>
+            ${state.locked ? `<div style="margin-top: 32px; display: flex; gap: 16px;"><input type="text" id="activationCodeInput" class="input-cyber" placeholder="${t('enterCode')} (e.g. MG-8F3D2-9A7E1-5C0B4)" style="flex:2;"><button id="unlockAction" class="btn-neon">${t('unlockBtn')}</button></div>` : `<div style="margin-top: 24px;"><i class="fas fa-check-circle"></i> Active session — all licensed modules ready</div>`}
+        </div>
+        <div class="glass-panel" style="margin-top: 32px; padding: 28px;">
+            <h3><i class="fas fa-cubes"></i> ${t('modules')}</h3>
+            <div class="module-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px,1fr)); gap: 22px; margin-top: 28px;">${modulesHtml}</div>
+        </div>`;
+    }
+
+    function attachUserEvents() {
+        document.getElementById('langSwitch')?.addEventListener('click', () => { currentLang = currentLang === 'en' ? 'zh' : 'en'; localStorage.setItem('mg_lang', currentLang); render(); });
+        document.getElementById('adminBtn')?.addEventListener('click', () => openAdminLogin());
+        document.getElementById('supportBtn')?.addEventListener('click', () => { let e=prompt("Email:"), p=prompt("Phone:"), m=prompt("Message:"); if(e&&m) sendSupport({email:e, phone:p, message:m}); else showToast("Email and message required",true); });
+        document.getElementById('unlockAction')?.addEventListener('click', () => { const code = document.getElementById('activationCodeInput')?.value.trim().toUpperCase(); if(code) submitActivation(code); else showToast("Enter code", true); });
+        document.querySelectorAll('.module-card').forEach(card => card.addEventListener('click', () => { if(state.locked) return; const id=card.dataset.id, url=card.dataset.url, isCustom=card.dataset.custom==='true'; if(!card.classList.contains('unlocked')) { showToast("Module not authorized",true); return; } onModuleClick(id,url,isCustom); }));
+    }
+
+    async function openAdminLogin() { let pwd = prompt("Admin Password:"); if(btoa(pwd)===state.adminPasswordHash || pwd==="820421") { state.adminLoggedIn=true; state.adminMode=true; render(); addTerminalLog("Admin access granted"); showToast("Admin mode"); } else showToast("Invalid password",true); }
+
+    function renderAdminPanel() { return `<div class="glass-panel" style="padding:28px;"><div style="display:flex; justify-content:space-between;"><h2><i class="fas fa-user-secret"></i> ${t('adminPanel')}</h2><div><button id="exitAdminMode" class="btn-outline">Exit</button> <button id="adminLogout" class="btn-outline">Logout</button></div></div><div class="admin-tab-container" id="adminTabContainerHead"></div><div id="adminTabContent"></div></div>`; }
+
+    function renderAdminTab(tab) { const container = document.getElementById('adminTabContent'); if(!container) return;
+        if(tab === 'dashboard') { let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]').length; container.innerHTML=`<div><i class="fas fa-chart-line"></i> Active Session: ${state.loggedIn?'✅':'❌'}<br>Messages: ${msgs}<br>Custom Modules: ${state.customModules.length}<br>Logs: ${state.sessionsLog.slice(0,3).map(l=>l.action).join(',')}</div>`; }
+        else if(tab === 'codegen') {
+            const codesTable = state.generatedCodes.map(c => `<tr><td style="font-family:monospace">${c.code}</td><td>${c.duration||'1h'}</td><td>${c.modules||'A,B,C'}</td><td>${c.deviceLock?'Used':'Unused'}</td><td><button class="btn-outline del-code-btn" data-code="${c.code}" style="padding:2px 12px;">${t('delete')}</button></td>`).join('');
+            container.innerHTML = `<div style="display:flex; gap:16px; margin-bottom:24px;"><select id="codeDuration" class="input-cyber"><option value="3minutes">3 min</option><option value="1hour">1 hour</option><option value="1day">1 day</option><option value="1week">1 week</option><option value="1month">1 month</option></select><input id="codeModulesStr" class="input-cyber" placeholder="Modules" value="Encoder,Decoder,Serverless,VideoHide"><button id="genCodeBtn" class="btn-neon">${t('generate')}</button></div><div id="genResultBox" class="glass-panel" style="padding:16px;"></div><h4>Existing Codes</h4><table class="admin-table"><tr><th>Code</th><th>Duration</th><th>Modules</th><th>Status</th><th></th></tr>${codesTable}</table>`;
+            document.getElementById('genCodeBtn')?.addEventListener('click',()=>{ let dur=document.getElementById('codeDuration').value, mods=document.getElementById('codeModulesStr').value, newCode=generateActivationCode(); state.generatedCodes.push({code:newCode, duration:dur, modules:mods, used:false, deviceLock:null}); localStorage.setItem('mg_codes_db',JSON.stringify(state.generatedCodes)); document.getElementById('genResultBox').innerHTML=`<code>${newCode}</code> <button class="btn-outline copyNewBtn">${t('copy')}</button>`; document.querySelector('.copyNewBtn')?.addEventListener('click',()=>{ navigator.clipboard.writeText(newCode); showToast("Copied!"); }); renderAdminTab('codegen'); });
+            document.querySelectorAll('.del-code-btn').forEach(btn=>btn.addEventListener('click',()=>{ state.generatedCodes=state.generatedCodes.filter(c=>c.code!==btn.dataset.code); localStorage.setItem('mg_codes_db',JSON.stringify(state.generatedCodes)); renderAdminTab('codegen'); }));
+        }
+        else if(tab === 'sessionmon') container.innerHTML = `<div>Device ID: ${state.deviceId?.slice(0,32)}...<br>Expires: ${state.sessionExpiry?new Date(state.sessionExpiry).toLocaleString():'N/A'}<br>Recent logs: ${state.sessionsLog.map(l=>l.action).join('<br>')}</div>`;
+        else if(tab === 'modulemgr') {
+            const sorted = [...state.customModules].sort((a,b)=>(a.order||0)-(b.order||0));
+            container.innerHTML = `<button id="newModuleBtn" class="btn-neon" style="margin-bottom:20px;"><i class="fas fa-plus"></i> Add Custom Module</button><div id="dragModulesContainer">${sorted.map(m=>`<div class="drag-module-item" data-id="${m.id}" draggable="true"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;"><i class="fas ${m.icon}" style="font-size:1.5rem;"></i> <strong>${m.name}</strong> <select class="mod-icon-select" data-id="${m.id}">${iconList.map(ic=>`<option value="${ic}" ${m.icon===ic?'selected':''}>${ic}</option>`).join('')}</select><input type="text" class="mod-url-edit" data-id="${m.id}" value="${m.url||''}" placeholder="URL"><input type="text" class="mod-name-edit" data-id="${m.id}" value="${m.name}"><label>Enable: <input type="checkbox" class="mod-enable-edit" data-id="${m.id}" ${m.enabled!==false?'checked':''}></label>${!m.core?`<button class="del-module" data-id="${m.id}">🗑️</button>`:'<span style="color:#ff5e2e;">core</span>'}</div></div>`).join('')}</div><p><i class="fas fa-arrows-alt"></i> Drag to reorder</p>`;
+            initDragDrop(); attachModuleEditHandlers();
+            document.getElementById('newModuleBtn')?.addEventListener('click',()=>{ state.customModules.push({ id:'cust_'+Date.now(), name:'New Tool', icon:'fa-cogs', url:'https://example.com', enabled:true, order:state.customModules.length, isCustom:true }); saveCustomModules(); renderAdminTab('modulemgr'); });
+        }
+        else if(tab === 'supportmsg') { let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]'); container.innerHTML=`<ul>${msgs.map(m=>`<li><strong>${m.email}</strong>: ${m.message}<br><small>${m.time}</small></li>`).join('')}</ul>`; }
+        else if(tab === 'settings') { container.innerHTML=`<div><label>Site Title: <input id="setSiteTitle" class="input-cyber" value="${state.siteTitle}"></label></div><div><label>Announcement: <textarea id="setAnnouncement" rows="2" class="input-cyber">${state.announcement}</textarea></label></div><div><label>New Admin Password: <input type="password" id="newAdminPwd" class="input-cyber"></label></div><button id="saveSettingsBtn" class="btn-neon">${t('save')}</button>`; document.getElementById('saveSettingsBtn')?.addEventListener('click',()=>{ state.siteTitle=document.getElementById('setSiteTitle').value; state.announcement=document.getElementById('setAnnouncement').value; let npwd=document.getElementById('newAdminPwd').value; if(npwd) state.adminPasswordHash=btoa(npwd); localStorage.setItem('mg_site_title',state.siteTitle); localStorage.setItem('mg_announcement',state.announcement); localStorage.setItem('mg_admin_hash',state.adminPasswordHash); showToast("Saved"); render(); }); }
+    }
+
+    function initDragDrop() { let dragSrc=null; document.querySelectorAll('.drag-module-item').forEach(el=>{ el.setAttribute('draggable','true'); el.addEventListener('dragstart',e=>{ dragSrc=el; e.dataTransfer.effectAllowed='move'; }); el.addEventListener('dragover',e=>{ e.preventDefault(); el.classList.add('drag-over'); }); el.addEventListener('dragleave',()=>el.classList.remove('drag-over')); el.addEventListener('drop',e=>{ e.preventDefault(); el.classList.remove('drag-over'); if(dragSrc && dragSrc!==el){ const parent=document.getElementById('dragModulesContainer'); const children=[...parent.children]; const fromIdx=children.indexOf(dragSrc), toIdx=children.indexOf(el); if(fromIdx!==-1 && toIdx!==-1){ let reorder=[...state.customModules]; const [moved]=reorder.splice(fromIdx,1); reorder.splice(toIdx,0,moved); reorder.forEach((mod,idx)=>mod.order=idx); state.customModules=reorder; saveCustomModules(); renderAdminTab('modulemgr'); } } dragSrc=null; }); }); }
+    function attachModuleEditHandlers() {
+        document.querySelectorAll('.mod-icon-select').forEach(sel=>sel.addEventListener('change',e=>{ let id=sel.dataset.id, mod=state.customModules.find(m=>m.id===id); if(mod) mod.icon=sel.value; saveCustomModules(); renderAdminTab('modulemgr'); }));
+        document.querySelectorAll('.mod-url-edit').forEach(inp=>inp.addEventListener('change',e=>{ let id=inp.dataset.id, mod=state.customModules.find(m=>m.id===id); if(mod) mod.url=inp.value; saveCustomModules(); }));
+        document.querySelectorAll('.mod-name-edit').forEach(inp=>inp.addEventListener('change',e=>{ let id=inp.dataset.id, mod=state.customModules.find(m=>m.id===id); if(mod) mod.name=inp.value; saveCustomModules(); renderAdminTab('modulemgr'); }));
+        document.querySelectorAll('.mod-enable-edit').forEach(ch=>ch.addEventListener('change',e=>{ let id=ch.dataset.id, mod=state.customModules.find(m=>m.id===id); if(mod) mod.enabled=ch.checked; saveCustomModules(); render(); }));
+        document.querySelectorAll('.del-module').forEach(btn=>btn.addEventListener('click',e=>{ let id=btn.dataset.id; state.customModules=state.customModules.filter(m=>m.id!==id); saveCustomModules(); renderAdminTab('modulemgr'); }));
+    }
+
+    function attachAdminEvents() {
+        const headContainer = document.getElementById('adminTabContainerHead');
+        if(headContainer) {
+            const tabs = ['dashboard','codegen','sessionmon','modulemgr','supportmsg','settings'];
+            headContainer.innerHTML = tabs.map(tab => `<button class="admin-tab" data-tab="${tab}">${t(tab)}</button>`).join('');
+            document.querySelectorAll('.admin-tab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderAdminTab(btn.dataset.tab);
+                });
+            });
+            document.querySelector('.admin-tab')?.classList.add('active');
+            renderAdminTab('dashboard');
+        }
+        document.getElementById('exitAdminMode')?.addEventListener('click',()=>{ state.adminMode=false; render(); });
+        document.getElementById('adminLogout')?.addEventListener('click',()=>{ state.adminLoggedIn=false; state.adminMode=false; render(); });
+    }
+
+    // 粒子背景
+    function initParticles() {
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth, height = window.innerHeight;
+        let particles = [];
+        const PARTICLE_COUNT = 100;
+        function resize() { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; }
+        window.addEventListener('resize', resize);
+        resize();
+        for(let i=0; i<PARTICLE_COUNT; i++) {
+            particles.push({ x: Math.random()*width, y: Math.random()*height, radius: Math.random()*2+1, alpha: Math.random()*0.5+0.2, speedX: (Math.random()-0.5)*0.3, speedY: (Math.random()-0.5)*0.2 });
+        }
+        function draw() {
+            if(!ctx) return;
+            ctx.clearRect(0,0,width,height);
+            for(let p of particles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(255, 94, 46, ${p.alpha})`;
+                ctx.fill();
+                p.x += p.speedX;
+                p.y += p.speedY;
+                if(p.x<0) p.x=width; if(p.x>width) p.x=0;
+                if(p.y<0) p.y=height; if(p.y>height) p.y=0;
+            }
+            requestAnimationFrame(draw);
+        }
+        draw();
+    }
+    initParticles();
+
+    // 启动
+    (async () => {
+        state.deviceId = await getDeviceFingerprint();
+        loadCustomModules();
+        await refreshSession();
+        render();
+        setInterval(() => { if(!state.adminMode) refreshSession(); }, 30000);
+        addTerminalLog("Warehouse terminal online | Neural UI ready");
+    })();
+</script>
 </body>
 </html>
