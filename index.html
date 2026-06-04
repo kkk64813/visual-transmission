@@ -394,7 +394,8 @@
         const isUrgent = state.loggedIn && remainSec < 300;
         let modulesDisplay = [...state.customModules].filter(m=>m.enabled).sort((a,b)=>(a.order||0)-(b.order||0));
         const modulesHtml = modulesDisplay.map(m => {
-            const isUnlocked = !state.locked && state.allowedModules.includes(m.id);
+            // 修复：将模块id转为大写，与后端返回的大写模块名匹配
+            const isUnlocked = !state.locked && state.allowedModules.includes(m.id.toUpperCase());
             return `<div class="module-card ${state.locked ? '' : (isUnlocked ? 'unlocked' : '')}" data-id="${m.id}" data-url="${m.url||''}" data-custom="${m.isCustom}"><i class="fas ${m.icon} module-icon"></i><strong>${m.name}</strong>${state.locked || !isUnlocked ? `<div class="lock-badge"><i class="fas fa-lock"></i></div>` : ''}</div>`;
         }).join('');
         return `
