@@ -76,8 +76,8 @@
 <script>
     const API_BASE = 'https://mg-secret-vault.mgjack13.workers.dev';
     const i18n = {
-        en: { title:"MG's Mystic Warehouse", lockedStatus:"🔒 LOCKED", unlockedStatus:"⚡ GRANTED", enterCode:"Enter Activation Code", unlockBtn:"Unlock Vault", admin:"Admin", support:"Support", timeRemaining:"Session Left", modules:"Tool Modules", announcement:"Announcement", generate:"Generate", copy:"Copy", minutes:"min", seconds:"sec", dashboard:"Dashboard", codeGen:"Code Gen", moduleMgr:"Module Manager", supportMsgs:"Messages", settings:"Settings", save:"Save", delete:"Delete", refresh:"Refresh", adminLogin:"Admin Login", adminPanel:"Admin Panel", status:"Status", remaining:"Remaining", used:"Used", unused:"Unused", expired:"Expired", clearAll:"Clear All", selectModules:"Select Modules" },
-        zh: { title:"MG的神秘仓库", lockedStatus:"🔒 已锁定", unlockedStatus:"⚡ 已激活", enterCode:"输入激活码", unlockBtn:"解锁", admin:"管理", support:"客服", timeRemaining:"剩余时间", modules:"工具模块", announcement:"公告栏", generate:"生成", copy:"复制", minutes:"分", seconds:"秒", dashboard:"看板", codeGen:"激活码", moduleMgr:"模块管理", supportMsgs:"留言", settings:"设置", save:"保存", delete:"删除", refresh:"刷新", adminLogin:"管理员登录", adminPanel:"管理面板", status:"状态", remaining:"剩余", used:"已使用", unused:"未使用", expired:"已过期", clearAll:"清空所有", selectModules:"选择模块" }
+        en: { title:"MG's Mystic Warehouse", lockedStatus:"🔒 LOCKED", unlockedStatus:"⚡ GRANTED", enterCode:"Enter Activation Code", unlockBtn:"Unlock Vault", admin:"Admin", support:"Support", timeRemaining:"Session Left", modules:"Tool Modules", announcement:"Announcement", generate:"Generate", copy:"Copy", minutes:"min", seconds:"sec", dashboard:"Dashboard", codeGen:"Code Gen", moduleMgr:"Module Manager", supportMsgs:"Messages", settings:"Settings", save:"Save", delete:"Delete", refresh:"Refresh", adminLogin:"Admin Login", adminPanel:"Admin Panel", status:"Status", remaining:"Remaining", used:"Used", unused:"Unused", expired:"Expired", clearAll:"Clear All", selectModules:"Select Modules", manualRefresh:"Refresh List" },
+        zh: { title:"MG的神秘仓库", lockedStatus:"🔒 已锁定", unlockedStatus:"⚡ 已激活", enterCode:"输入激活码", unlockBtn:"解锁", admin:"管理", support:"客服", timeRemaining:"剩余时间", modules:"工具模块", announcement:"公告栏", generate:"生成", copy:"复制", minutes:"分", seconds:"秒", dashboard:"看板", codeGen:"激活码", moduleMgr:"模块管理", supportMsgs:"留言", settings:"设置", save:"保存", delete:"删除", refresh:"刷新", adminLogin:"管理员登录", adminPanel:"管理面板", status:"状态", remaining:"剩余", used:"已使用", unused:"未使用", expired:"已过期", clearAll:"清空所有", selectModules:"选择模块", manualRefresh:"刷新列表" }
     };
     let currentLang = localStorage.getItem('mg_lang') || 'en';
     function t(key) { return i18n[currentLang][key] || i18n.en[key] || key; }
@@ -90,6 +90,7 @@
         sessionsLog: JSON.parse(localStorage.getItem('mg_sessions_log') || '[]')
     };
     let sessionInterval = null, toastTimer = null, refreshTimer = null;
+    let currentAdminTab = 'dashboard';
 
     const coreModules = [
         { id: "Encoder", name: "Encoder", icon: "fa-lock", url: "encoder.html", enabled: true, order: 0, isCustom: false, core: true },
@@ -142,7 +143,35 @@
         } catch(e) { return 'dev_'+Math.random().toString(36).substring(2,10); }
     }
 
-    function saveCustomModules() { localStorage.setItem('mg_custom_modules', JSON.stringify(state.customModules)); }
+    async function syncModulesToBackend() {
+        if (!state.adminLoggedIn) return;
+        try {
+            const res = await fetch(`${API_BASE}/api/admin/update-modules`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modules: state.customModules }),
+                credentials: 'include'
+            });
+            if (!res.ok) console.warn("Failed to sync modules");
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadModulesFromBackend() {
+        try {
+            const res = await fetch(`${API_BASE}/api/admin/get-modules`, { credentials: 'include' });
+            const data = await res.json();
+            if (data.success && data.modules && Array.isArray(data.modules)) {
+                state.customModules = data.modules;
+                saveCustomModules();
+                render(); // 重新渲染用户界面或管理界面
+            }
+        } catch(e) { console.warn("Failed to load modules from backend", e); }
+    }
+
+    function saveCustomModules() { 
+        localStorage.setItem('mg_custom_modules', JSON.stringify(state.customModules));
+        syncModulesToBackend(); // 每次修改都同步到后端
+    }
     function loadCustomModules() {
         const stored = localStorage.getItem('mg_custom_modules');
         if(stored) state.customModules = JSON.parse(stored);
@@ -169,16 +198,46 @@
                 if (wasLoggedIn) addTerminalLog("Session expired", true);
                 logoutFallback(); 
             }
-            render();
-        } catch(e) { logoutFallback(); render(); }
+            // 只在非admin模式下重新渲染用户界面，admin模式下只更新时间显示
+            if (!state.adminMode) render();
+            else updateTimeDisplayOnly();
+        } catch(e) { logoutFallback(); if (!state.adminMode) render(); else updateTimeDisplayOnly(); }
     }
+
+    function updateTimeDisplayOnly() {
+        const remainSec = state.loggedIn ? Math.max(0, Math.floor((state.sessionExpiry - Date.now())/1000)) : 0;
+        const remainStr = state.loggedIn ? `${Math.floor(remainSec/60)}${t('minutes')} ${remainSec%60}${t('seconds')}` : '--';
+        const remainSpan = document.getElementById('remainTime');
+        if(remainSpan) remainSpan.innerText = remainStr;
+        const ringText = document.querySelector('.time-ring-text');
+        if(ringText) ringText.innerText = `${Math.floor(remainSec/60)}:${(remainSec%60).toString().padStart(2,'0')}`;
+        const isUrgent = state.loggedIn && remainSec < 300;
+        if(remainSpan) {
+            if(isUrgent) remainSpan.classList.add('urgent-time');
+            else remainSpan.classList.remove('urgent-time');
+        }
+        const dateEl = document.getElementById('liveDateTime');
+        if(dateEl) dateEl.innerText = new Date().toLocaleString(currentLang === 'zh' ? 'zh-CN' : 'en-US', { hour12: false });
+        if(state.loggedIn && state.sessionExpiry) {
+            const remaining = Math.max(0, state.sessionExpiry - Date.now());
+            const percent = Math.min(1, remaining / 3600000);
+            const ring = document.querySelector('.time-ring-progress');
+            if(ring) {
+                const radius = 35;
+                const circum = 2 * Math.PI * radius;
+                const offset = circum * (1 - percent);
+                ring.style.strokeDashoffset = offset;
+            }
+        }
+    }
+
     function logoutFallback() { 
         const wasLoggedIn = state.loggedIn;
         state.loggedIn = false; state.locked = true; state.allowedModules = []; 
         if(sessionInterval) clearInterval(sessionInterval); 
         if (wasLoggedIn) addTerminalLog("Session lost", true);
     }
-    function startCountdown() { if(sessionInterval) clearInterval(sessionInterval); sessionInterval = setInterval(() => { if(!state.loggedIn) return; if(Date.now() >= state.sessionExpiry) { logoutFallback(); showToast("Session expired", true); render(); } else render(); }, 1000); }
+    function startCountdown() { if(sessionInterval) clearInterval(sessionInterval); sessionInterval = setInterval(() => { if(!state.loggedIn) return; if(Date.now() >= state.sessionExpiry) { logoutFallback(); showToast("Session expired", true); if (!state.adminMode) render(); else updateTimeDisplayOnly(); } else { if (!state.adminMode) render(); else updateTimeDisplayOnly(); } }, 1000); }
 
     async function submitActivation(code) {
         if(!state.deviceId) state.deviceId = await getDeviceFingerprint();
@@ -230,6 +289,8 @@
             if (res.ok && data.success) {
                 state.adminLoggedIn = true;
                 state.adminMode = true;
+                // 从后端加载模块配置
+                await loadModulesFromBackend();
                 render();
                 addTerminalLog("Admin access granted", true);
                 showToast("Admin mode enabled");
@@ -301,35 +362,25 @@
         navigator.clipboard.writeText(text).then(() => showToast("Copied!", false)).catch(() => showToast("Copy failed", true));
     }
 
+    // 渲染函数：分离 admin 模式和 user 模式，admin模式下不重建整个面板，只切换 tab 内容
     function render() {
         const root = document.getElementById('appRoot');
         if(!root) return;
         if(state.adminMode && state.adminLoggedIn) {
+            // 如果 admin 容器已存在，只更新时间显示，不重建面板
+            if (root.querySelector('.glass-panel') && root.querySelector('.admin-tab-container')) {
+                updateTimeDisplayOnly();
+                return;
+            }
             root.innerHTML = renderAdminPanel();
             attachAdminEvents();
         } else {
             root.innerHTML = renderUserPortal();
             attachUserEvents();
         }
-        updateClock();
+        updateTimeDisplayOnly();
         if(window.clockInterval) clearInterval(window.clockInterval);
-        window.clockInterval = setInterval(updateClock, 1000);
-    }
-
-    function updateClock() {
-        const el = document.getElementById('liveDateTime');
-        if(el) el.innerText = new Date().toLocaleString(currentLang === 'zh' ? 'zh-CN' : 'en-US', { hour12: false });
-        if(state.loggedIn && state.sessionExpiry) {
-            const remaining = Math.max(0, state.sessionExpiry - Date.now());
-            const percent = Math.min(1, remaining / 3600000);
-            const ring = document.querySelector('.time-ring-progress');
-            if(ring) {
-                const radius = 35;
-                const circum = 2 * Math.PI * radius;
-                const offset = circum * (1 - percent);
-                ring.style.strokeDashoffset = offset;
-            }
-        }
+        window.clockInterval = setInterval(updateTimeDisplayOnly, 1000);
     }
 
     function renderUserPortal() {
@@ -384,9 +435,87 @@
 
     function renderAdminPanel() { return `<div class="glass-panel" style="padding:28px;"><div style="display:flex; justify-content:space-between; flex-wrap:wrap;"><h2><i class="fas fa-user-secret"></i> ${t('adminPanel')}</h2><div style="gap:12px; display:flex;"><button id="exitAdminMode" class="btn-outline">Exit</button> <button id="adminLogout" class="btn-outline">Logout</button></div></div><div class="admin-tab-container" id="adminTabContainerHead"></div><div id="adminTabContent"></div></div>`; }
 
-    let currentAdminTab = 'dashboard';
-    // 专门用于刷新激活码列表的函数（不重建整个页签）
-    async function refreshCodeList() {
+    async function renderAdminTabContent(tab) {
+        const container = document.getElementById('adminTabContent');
+        if(!container) return;
+        currentAdminTab = tab;
+        if(tab === 'dashboard') {
+            let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]').length;
+            container.innerHTML=`<div><i class="fas fa-chart-line"></i> Active Session: ${state.loggedIn?'✅':'❌'}<br>Messages: ${msgs}<br>Custom Modules: ${state.customModules.length}<br>Logs: ${state.sessionsLog.slice(0,3).map(l=>l.action).join(',')}<br><button id="refreshStatsBtn" class="btn-outline">${t('refresh')}</button></div>`;
+            document.getElementById('refreshStatsBtn')?.addEventListener('click', () => renderAdminTabContent('dashboard'));
+        } else if(tab === 'codegen') {
+            // 构建静态部分（不包括表格行）
+            const allModules = [...state.customModules.filter(m => m.enabled), ...coreModules];
+            const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
+            const moduleCheckboxes = uniqueModules.map(mod => `<label><input type="checkbox" value="${mod.id}" class="module-checkbox" checked> ${mod.name}</label>`).join('');
+            container.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <select id="codeDuration" class="input-cyber"><option value="3minutes">3 min</option><option value="1hour">1 hour</option><option value="24hours">24 hours</option><option value="1week">1 week</option><option value="1month">1 month</option></select>
+                    <div><strong>${t('selectModules')}:</strong><div class="module-checkbox-group" id="moduleCheckboxGroup">${moduleCheckboxes}</div></div>
+                    <div style="display: flex; gap: 12px;"><button id="genCodeBtn" class="btn-neon">${t('generate')}</button><button id="manualRefreshCodesBtn" class="btn-outline">${t('manualRefresh')}</button></div>
+                    <div id="genResultBox" class="glass-panel" style="padding:16px;"></div>
+                </div>
+                <h4>Existing Codes</h4>
+                <div style="overflow-x:auto;"><table class="admin-table">
+                    <thead><tr><th>Code</th><th>Duration</th><th>Modules</th><th>${t('status')}</th><th>${t('remaining')}</th><th></th></tr></thead>
+                    <tbody id="codeTableBody"></tbody>
+                </table></div>`;
+            // 刷新表格内容
+            await refreshCodeTable();
+            // 绑定生成按钮
+            document.getElementById('genCodeBtn')?.addEventListener('click', async () => {
+                const duration = document.getElementById('codeDuration').value;
+                const selectedModules = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
+                if (selectedModules.length === 0) { showToast("Select at least one module", true); return; }
+                const newCode = await generateActivationCode(duration, selectedModules);
+                if (newCode) {
+                    document.getElementById('genResultBox').innerHTML = `<code>${newCode}</code> <button class="btn-outline copyNewBtn">${t('copy')}</button>`;
+                    document.querySelector('.copyNewBtn')?.addEventListener('click', () => { copyToClipboard(newCode); });
+                    await refreshCodeTable(); // 刷新表格
+                }
+            });
+            // 手动刷新按钮
+            document.getElementById('manualRefreshCodesBtn')?.addEventListener('click', async () => {
+                await refreshCodeTable();
+                showToast("Code list refreshed", false);
+            });
+        } else if(tab === 'modulemgr') {
+            const sorted = [...state.customModules].sort((a,b)=>(a.order||0)-(b.order||0));
+            container.innerHTML = `<button id="newModuleBtn" class="btn-neon" style="margin-bottom:20px;"><i class="fas fa-plus"></i> Add Custom Module</button><div id="dragModulesContainer">${sorted.map(m=>`<div class="drag-module-item" data-id="${m.id}" draggable="true"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;"><i class="fas ${m.icon}" style="font-size:1.5rem;"></i> <strong>${m.name}</strong> <select class="mod-icon-select" data-id="${m.id}">${iconList.map(ic=>`<option value="${ic}" ${m.icon===ic?'selected':''}>${ic}</option>`).join('')}</select><input type="text" class="mod-url-edit" data-id="${m.id}" value="${m.url||''}" placeholder="URL"><input type="text" class="mod-name-edit" data-id="${m.id}" value="${m.name}"><label>Enable: <input type="checkbox" class="mod-enable-edit" data-id="${m.id}" ${m.enabled!==false?'checked':''}></label>${!m.core?`<button class="del-module" data-id="${m.id}">🗑️</button>`:'<span style="color:#ff5e2e;">core</span>'}</div></div>`).join('')}</div><p><i class="fas fa-arrows-alt"></i> Drag to reorder. Changes auto-save.</p>`;
+            initDragDrop(); attachModuleEditHandlers();
+            document.getElementById('newModuleBtn')?.addEventListener('click',()=>{ state.customModules.push({ id:'cust_'+Date.now(), name:'New Tool', icon:'fa-cogs', url:'https://example.com', enabled:true, order:state.customModules.length, isCustom:true }); saveCustomModules(); renderAdminTabContent('modulemgr'); });
+        } else if(tab === 'supportmsg') {
+            let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]');
+            container.innerHTML=`<div><button id="clearMessagesBtn" class="btn-outline" style="margin-bottom:16px;">${t('clearAll')}</button><ul>${msgs.map(m=>`<li><strong>${m.email}</strong> ${m.phone ? `(${m.phone})` : ''}: ${m.message}<br><small>${m.time}</small></li>`).join('')}</ul></div>`;
+            document.getElementById('clearMessagesBtn')?.addEventListener('click',()=>{ localStorage.removeItem('mg_support_messages'); renderAdminTabContent('supportmsg'); showToast("All messages cleared"); });
+        } else if(tab === 'settings') {
+            container.innerHTML=`<div><label>Site Title: <input id="setSiteTitle" class="input-cyber" value="${state.siteTitle}"></label></div><div><label>Announcement: <textarea id="setAnnouncement" rows="2" class="input-cyber">${state.announcement}</textarea></label></div><div><label>New Admin Password: <input type="password" id="newAdminPwd" class="input-cyber"></label></div><button id="saveSettingsBtn" class="btn-neon">${t('save')}</button>`;
+            document.getElementById('saveSettingsBtn')?.addEventListener('click',async ()=>{
+                state.siteTitle=document.getElementById('setSiteTitle').value;
+                state.announcement=document.getElementById('setAnnouncement').value;
+                let npwd=document.getElementById('newAdminPwd').value;
+                if(npwd) {
+                    try {
+                        const old = prompt("Enter current admin password:");
+                        const res = await fetch(`${API_BASE}/api/admin/change-password`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ old_password: old, new_password: npwd }),
+                            credentials: 'include'
+                        });
+                        if(res.ok) showToast("Password updated");
+                        else showToast("Password change failed", true);
+                    } catch(e) { showToast("API error", true); }
+                }
+                localStorage.setItem('mg_site_title',state.siteTitle);
+                localStorage.setItem('mg_announcement',state.announcement);
+                showToast("Saved");
+                render();
+            });
+        }
+    }
+
+    async function refreshCodeTable() {
         const tableBody = document.getElementById('codeTableBody');
         if (!tableBody) return;
         const codes = await fetchActivationCodes();
@@ -426,85 +555,10 @@
                 const code = btn.dataset.code;
                 if(confirm(`Delete ${code}?`)) {
                     const ok = await deleteActivationCode(code);
-                    if(ok) refreshCodeList();
+                    if(ok) refreshCodeTable();
                 }
             });
         });
-    }
-
-    async function renderAdminTabContent(tab) {
-        const container = document.getElementById('adminTabContent');
-        if(!container) return;
-        currentAdminTab = tab;
-        if(tab === 'dashboard') {
-            let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]').length;
-            container.innerHTML=`<div><i class="fas fa-chart-line"></i> Active Session: ${state.loggedIn?'✅':'❌'}<br>Messages: ${msgs}<br>Custom Modules: ${state.customModules.length}<br>Logs: ${state.sessionsLog.slice(0,3).map(l=>l.action).join(',')}<br><button id="refreshStatsBtn" class="btn-outline">${t('refresh')}</button></div>`;
-            document.getElementById('refreshStatsBtn')?.addEventListener('click', () => renderAdminTabContent('dashboard'));
-        } else if(tab === 'codegen') {
-            // 构建静态部分（不包括表格行）
-            const allModules = [...state.customModules.filter(m => m.enabled), ...coreModules];
-            const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
-            const moduleCheckboxes = uniqueModules.map(mod => `<label><input type="checkbox" value="${mod.id}" class="module-checkbox" checked> ${mod.name}</label>`).join('');
-            container.innerHTML = `
-                <div style="display:flex; flex-direction:column; gap:16px;">
-                    <select id="codeDuration" class="input-cyber"><option value="3minutes">3 min</option><option value="1hour">1 hour</option><option value="24hours">24 hours</option><option value="1week">1 week</option><option value="1month">1 month</option></select>
-                    <div><strong>${t('selectModules')}:</strong><div class="module-checkbox-group" id="moduleCheckboxGroup">${moduleCheckboxes}</div></div>
-                    <button id="genCodeBtn" class="btn-neon">${t('generate')}</button>
-                    <div id="genResultBox" class="glass-panel" style="padding:16px;"></div>
-                </div>
-                <h4>Existing Codes</h4>
-                <div style="overflow-x:auto;"><table class="admin-table">
-                    <thead><tr><th>Code</th><th>Duration</th><th>Modules</th><th>${t('status')}</th><th>${t('remaining')}</th><th></th></tr></thead>
-                    <tbody id="codeTableBody"></tbody>
-                </table></div>`;
-            // 刷新表格内容
-            await refreshCodeList();
-            // 绑定生成按钮事件
-            document.getElementById('genCodeBtn')?.addEventListener('click', async () => {
-                const duration = document.getElementById('codeDuration').value;
-                const selectedModules = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
-                if (selectedModules.length === 0) { showToast("Select at least one module", true); return; }
-                const newCode = await generateActivationCode(duration, selectedModules);
-                if (newCode) {
-                    document.getElementById('genResultBox').innerHTML = `<code>${newCode}</code> <button class="btn-outline copyNewBtn">${t('copy')}</button>`;
-                    document.querySelector('.copyNewBtn')?.addEventListener('click', () => { copyToClipboard(newCode); });
-                    await refreshCodeList(); // 刷新表格
-                }
-            });
-        } else if(tab === 'modulemgr') {
-            const sorted = [...state.customModules].sort((a,b)=>(a.order||0)-(b.order||0));
-            container.innerHTML = `<button id="newModuleBtn" class="btn-neon" style="margin-bottom:20px;"><i class="fas fa-plus"></i> Add Custom Module</button><div id="dragModulesContainer">${sorted.map(m=>`<div class="drag-module-item" data-id="${m.id}" draggable="true"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;"><i class="fas ${m.icon}" style="font-size:1.5rem;"></i> <strong>${m.name}</strong> <select class="mod-icon-select" data-id="${m.id}">${iconList.map(ic=>`<option value="${ic}" ${m.icon===ic?'selected':''}>${ic}</option>`).join('')}</select><input type="text" class="mod-url-edit" data-id="${m.id}" value="${m.url||''}" placeholder="URL"><input type="text" class="mod-name-edit" data-id="${m.id}" value="${m.name}"><label>Enable: <input type="checkbox" class="mod-enable-edit" data-id="${m.id}" ${m.enabled!==false?'checked':''}></label>${!m.core?`<button class="del-module" data-id="${m.id}">🗑️</button>`:'<span style="color:#ff5e2e;">core</span>'}</div></div>`).join('')}</div><p><i class="fas fa-arrows-alt"></i> Drag to reorder. Changes auto-save.</p>`;
-            initDragDrop(); attachModuleEditHandlers();
-            document.getElementById('newModuleBtn')?.addEventListener('click',()=>{ state.customModules.push({ id:'cust_'+Date.now(), name:'New Tool', icon:'fa-cogs', url:'https://example.com', enabled:true, order:state.customModules.length, isCustom:true }); saveCustomModules(); renderAdminTabContent('modulemgr'); });
-        } else if(tab === 'supportmsg') {
-            let msgs=JSON.parse(localStorage.getItem('mg_support_messages')||'[]');
-            container.innerHTML=`<div><button id="clearMessagesBtn" class="btn-outline" style="margin-bottom:16px;">${t('clearAll')}</button><ul>${msgs.map(m=>`<li><strong>${m.email}</strong> ${m.phone ? `(${m.phone})` : ''}: ${m.message}<br><small>${m.time}</small></li>`).join('')}</ul></div>`;
-            document.getElementById('clearMessagesBtn')?.addEventListener('click',()=>{ localStorage.removeItem('mg_support_messages'); renderAdminTabContent('supportmsg'); showToast("All messages cleared"); });
-        } else if(tab === 'settings') {
-            container.innerHTML=`<div><label>Site Title: <input id="setSiteTitle" class="input-cyber" value="${state.siteTitle}"></label></div><div><label>Announcement: <textarea id="setAnnouncement" rows="2" class="input-cyber">${state.announcement}</textarea></label></div><div><label>New Admin Password: <input type="password" id="newAdminPwd" class="input-cyber"></label></div><button id="saveSettingsBtn" class="btn-neon">${t('save')}</button>`;
-            document.getElementById('saveSettingsBtn')?.addEventListener('click',async ()=>{
-                state.siteTitle=document.getElementById('setSiteTitle').value;
-                state.announcement=document.getElementById('setAnnouncement').value;
-                let npwd=document.getElementById('newAdminPwd').value;
-                if(npwd) {
-                    try {
-                        const old = prompt("Enter current admin password:");
-                        const res = await fetch(`${API_BASE}/api/admin/change-password`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ old_password: old, new_password: npwd }),
-                            credentials: 'include'
-                        });
-                        if(res.ok) showToast("Password updated");
-                        else showToast("Password change failed", true);
-                    } catch(e) { showToast("API error", true); }
-                }
-                localStorage.setItem('mg_site_title',state.siteTitle);
-                localStorage.setItem('mg_announcement',state.announcement);
-                showToast("Saved");
-                render();
-            });
-        }
     }
 
     function initDragDrop() { let dragSrc=null; document.querySelectorAll('.drag-module-item').forEach(el=>{ el.setAttribute('draggable','true'); el.addEventListener('dragstart',e=>{ dragSrc=el; e.dataTransfer.effectAllowed='move'; }); el.addEventListener('dragover',e=>{ e.preventDefault(); el.classList.add('drag-over'); }); el.addEventListener('dragleave',()=>el.classList.remove('drag-over')); el.addEventListener('drop',e=>{ e.preventDefault(); el.classList.remove('drag-over'); if(dragSrc && dragSrc!==el){ const parent=document.getElementById('dragModulesContainer'); const children=[...parent.children]; const fromIdx=children.indexOf(dragSrc), toIdx=children.indexOf(el); if(fromIdx!==-1 && toIdx!==-1){ let reorder=[...state.customModules]; const [moved]=reorder.splice(fromIdx,1); reorder.splice(toIdx,0,moved); reorder.forEach((mod,idx)=>mod.order=idx); state.customModules=reorder; saveCustomModules(); renderAdminTabContent('modulemgr'); } } dragSrc=null; }); }); }
