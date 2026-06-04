@@ -143,6 +143,25 @@
         } catch(e) { return 'dev_'+Math.random().toString(36).substring(2,10); }
     }
 
+    // 从后端公开接口获取模块配置（多设备同步）
+    async function fetchPublicModules() {
+        try {
+            const res = await fetch(`${API_BASE}/api/public/modules`);
+            const data = await res.json();
+            if (data.success && data.modules && Array.isArray(data.modules)) {
+                state.customModules = data.modules;
+                saveCustomModules(false); // 保存到本地，但不触发后端同步（避免循环）
+                render();
+                addTerminalLog("Modules synced from server", true);
+                return true;
+            }
+            return false;
+        } catch(e) {
+            console.warn("Failed to fetch public modules", e);
+            return false;
+        }
+    }
+
     async function syncModulesToBackend() {
         if (!state.adminLoggedIn) return;
         try {
@@ -152,25 +171,13 @@
                 body: JSON.stringify({ modules: state.customModules }),
                 credentials: 'include'
             });
-            if (!res.ok) console.warn("Failed to sync modules");
+            if (!res.ok) console.warn("Failed to sync modules to backend");
         } catch(e) { console.error(e); }
     }
 
-    async function loadModulesFromBackend() {
-        try {
-            const res = await fetch(`${API_BASE}/api/admin/get-modules`, { credentials: 'include' });
-            const data = await res.json();
-            if (data.success && data.modules && Array.isArray(data.modules)) {
-                state.customModules = data.modules;
-                saveCustomModules();
-                render(); // 重新渲染用户界面或管理界面
-            }
-        } catch(e) { console.warn("Failed to load modules from backend", e); }
-    }
-
-    function saveCustomModules() { 
+    function saveCustomModules(triggerSync = true) { 
         localStorage.setItem('mg_custom_modules', JSON.stringify(state.customModules));
-        syncModulesToBackend(); // 每次修改都同步到后端
+        if (triggerSync) syncModulesToBackend();
     }
     function loadCustomModules() {
         const stored = localStorage.getItem('mg_custom_modules');
@@ -178,7 +185,7 @@
         else state.customModules = [...coreModules];
         for(let core of coreModules) if(!state.customModules.find(m => m.id === core.id)) state.customModules.push({ ...core });
         state.customModules.forEach((m, idx) => { if(m.order === undefined) m.order = idx; });
-        saveCustomModules();
+        saveCustomModules(false);
     }
 
     async function refreshSession() {
@@ -198,7 +205,6 @@
                 if (wasLoggedIn) addTerminalLog("Session expired", true);
                 logoutFallback(); 
             }
-            // 只在非admin模式下重新渲染用户界面，admin模式下只更新时间显示
             if (!state.adminMode) render();
             else updateTimeDisplayOnly();
         } catch(e) { logoutFallback(); if (!state.adminMode) render(); else updateTimeDisplayOnly(); }
@@ -289,8 +295,8 @@
             if (res.ok && data.success) {
                 state.adminLoggedIn = true;
                 state.adminMode = true;
-                // 从后端加载模块配置
-                await loadModulesFromBackend();
+                // 从后端获取最新模块配置（管理员也要同步）
+                await fetchPublicModules();
                 render();
                 addTerminalLog("Admin access granted", true);
                 showToast("Admin mode enabled");
@@ -362,12 +368,11 @@
         navigator.clipboard.writeText(text).then(() => showToast("Copied!", false)).catch(() => showToast("Copy failed", true));
     }
 
-    // 渲染函数：分离 admin 模式和 user 模式，admin模式下不重建整个面板，只切换 tab 内容
+    // 渲染函数
     function render() {
         const root = document.getElementById('appRoot');
         if(!root) return;
         if(state.adminMode && state.adminLoggedIn) {
-            // 如果 admin 容器已存在，只更新时间显示，不重建面板
             if (root.querySelector('.glass-panel') && root.querySelector('.admin-tab-container')) {
                 updateTimeDisplayOnly();
                 return;
@@ -444,7 +449,6 @@
             container.innerHTML=`<div><i class="fas fa-chart-line"></i> Active Session: ${state.loggedIn?'✅':'❌'}<br>Messages: ${msgs}<br>Custom Modules: ${state.customModules.length}<br>Logs: ${state.sessionsLog.slice(0,3).map(l=>l.action).join(',')}<br><button id="refreshStatsBtn" class="btn-outline">${t('refresh')}</button></div>`;
             document.getElementById('refreshStatsBtn')?.addEventListener('click', () => renderAdminTabContent('dashboard'));
         } else if(tab === 'codegen') {
-            // 构建静态部分（不包括表格行）
             const allModules = [...state.customModules.filter(m => m.enabled), ...coreModules];
             const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
             const moduleCheckboxes = uniqueModules.map(mod => `<label><input type="checkbox" value="${mod.id}" class="module-checkbox" checked> ${mod.name}</label>`).join('');
@@ -460,9 +464,7 @@
                     <thead><tr><th>Code</th><th>Duration</th><th>Modules</th><th>${t('status')}</th><th>${t('remaining')}</th><th></th></tr></thead>
                     <tbody id="codeTableBody"></tbody>
                 </table></div>`;
-            // 刷新表格内容
             await refreshCodeTable();
-            // 绑定生成按钮
             document.getElementById('genCodeBtn')?.addEventListener('click', async () => {
                 const duration = document.getElementById('codeDuration').value;
                 const selectedModules = Array.from(document.querySelectorAll('.module-checkbox:checked')).map(cb => cb.value);
@@ -471,10 +473,9 @@
                 if (newCode) {
                     document.getElementById('genResultBox').innerHTML = `<code>${newCode}</code> <button class="btn-outline copyNewBtn">${t('copy')}</button>`;
                     document.querySelector('.copyNewBtn')?.addEventListener('click', () => { copyToClipboard(newCode); });
-                    await refreshCodeTable(); // 刷新表格
+                    await refreshCodeTable();
                 }
             });
-            // 手动刷新按钮
             document.getElementById('manualRefreshCodesBtn')?.addEventListener('click', async () => {
                 await refreshCodeTable();
                 showToast("Code list refreshed", false);
@@ -519,7 +520,6 @@
         const tableBody = document.getElementById('codeTableBody');
         if (!tableBody) return;
         const codes = await fetchActivationCodes();
-        const nowSec = Math.floor(Date.now() / 1000);
         tableBody.innerHTML = codes.map(c => {
             let statusText = '', statusClass = '';
             if (c.status === 'unused') { statusText = t('unused'); statusClass = 'status-unused'; }
@@ -542,12 +542,10 @@
                 <td><button class="btn-outline del-code-btn" data-code="${c.code}" style="padding:2px 12px;">${t('delete')}</button></td>
             </tr>`;
         }).join('');
-        // 绑定复制和删除事件
         document.querySelectorAll('.copy-icon').forEach(icon => {
             icon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const code = icon.dataset.code;
-                copyToClipboard(code);
+                copyToClipboard(icon.dataset.code);
             });
         });
         document.querySelectorAll('.del-code-btn').forEach(btn => {
@@ -608,7 +606,12 @@
 
     (async () => {
         state.deviceId = await getDeviceFingerprint();
-        loadCustomModules();
+        // 优先从后端公开接口获取模块配置，实现多设备同步
+        const synced = await fetchPublicModules();
+        if (!synced) {
+            // 如果后端没有配置，则使用本地存储或默认配置
+            loadCustomModules();
+        }
         await refreshSession();
         render();
         if(refreshTimer) clearInterval(refreshTimer);
