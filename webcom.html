@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>WebCom Lite · 极简聊天室</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' font-size='80' text-anchor='middle' dy='.3em' fill='%235f9eff'%3E💬%3C/text%3E%3C/svg%3E">
     <style>
         * {
             margin: 0;
@@ -122,6 +123,7 @@
             padding: 0.6rem 1rem;
             border-left: 4px solid #5f9eff;
             position: relative;
+            cursor: pointer;
         }
         .message-user {
             font-weight: bold;
@@ -185,10 +187,67 @@
             font-size: 0.85rem;
             border-left: 3px solid #ffc107;
         }
+        .notification-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #1e3a5f;
+            border-radius: 2rem;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid #5f9eff;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .notification-banner button {
+            background: #5f9eff;
+            padding: 4px 12px;
+            border-radius: 2rem;
+        }
+        .settings-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #0f1a2e;
+            border-radius: 2rem;
+            padding: 1.5rem;
+            z-index: 1001;
+            width: 280px;
+            text-align: center;
+            border: 1px solid #5f9eff;
+        }
         @media (max-width: 768px) {
-            .nav-bar { flex-direction: column; gap: 0.8rem; }
-            .grid-2col { grid-template-columns: 1fr; }
-            .message-list { max-height: 45vh; }
+            .grid-2col {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .room-list-container {
+                max-height: 250px;
+                overflow-y: auto;
+            }
+            .online-users-container {
+                max-height: 200px;
+                overflow-y: auto;
+            }
+            .chat-card {
+                height: 65vh;
+            }
+            .message-list {
+                max-height: 55vh;
+            }
+            .nav-bar {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -226,7 +285,7 @@
     <!-- 主应用视图 -->
     <div id="view-app" class="view">
         <div class="grid-2col" style="gap: 1.2rem;">
-            <!-- 左侧：房间列表 + 在线用户 + 管理员入口 -->
+            <!-- 左侧：房间列表 + 在线用户 -->
             <div>
                 <div class="card" style="margin-bottom: 1rem;">
                     <div class="flex-between">
@@ -236,34 +295,49 @@
                             <button id="createRoomBtn" style="padding: 0.3rem 1rem;">+ 创建</button>
                         </div>
                     </div>
-                    <div id="roomList" style="margin-top: 1rem; max-height: 30vh; overflow-y: auto;"></div>
+                    <div id="roomList" class="room-list-container" style="margin-top: 1rem;"></div>
                 </div>
                 <div class="card">
                     <h3>👥 在线用户</h3>
-                    <div id="onlineUsersList" style="margin-top: 0.8rem; max-height: 28vh; overflow-y: auto;"></div>
+                    <div id="onlineUsersList" class="online-users-container" style="margin-top: 0.8rem;"></div>
                 </div>
             </div>
 
             <!-- 右侧聊天区域 -->
-            <div class="card" style="display: flex; flex-direction: column; height: 70vh;">
+            <div class="card chat-card" style="display: flex; flex-direction: column; height: 70vh;">
                 <div class="flex-between">
                     <div>
                         <span id="chatTitle">💬 未选择聊天</span>
                         <span id="chatTypeBadge" style="font-size:0.7rem; background:#2a3f6e; padding:2px 8px; border-radius:20px; margin-left:8px;">群聊</span>
                     </div>
-                    <button id="closeChatBtn" style="background: none; border:1px solid #4f6f9f;">✕ 关闭</button>
+                    <div>
+                        <button id="settingsMenuBtn" style="background: none; border:1px solid #4f6f9f; margin-right: 6px;">⚙️</button>
+                        <button id="closeChatBtn" style="background: none; border:1px solid #4f6f9f;">✕ 关闭</button>
+                    </div>
                 </div>
                 <div id="announcementArea" class="announcement" style="display: none;"></div>
                 <div id="messageArea" class="message-list" style="flex:1; margin: 1rem 0;"></div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <input type="text" id="messageInput" placeholder="输入消息... (回复: 点击消息)" maxlength="2000" style="flex:1;">
+                    <input type="text" id="messageInput" placeholder="输入消息... (点击消息引用)" maxlength="2000" style="flex:1;">
                     <button id="sendMsgBtn">发送</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 管理员后台视图（弹窗风格，实际用卡片覆盖） -->
+    <!-- 设置浮窗 -->
+    <div id="settingsModal" style="display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); z-index: 2001; align-items: center; justify-content: center;">
+        <div class="settings-panel">
+            <h4>⚙️ 设置</h4>
+            <label style="display: flex; justify-content: space-between; margin: 1rem 0;">
+                <span>🔔 声音提示</span>
+                <input type="checkbox" id="soundToggle" checked>
+            </label>
+            <button id="closeSettingsBtn">关闭</button>
+        </div>
+    </div>
+
+    <!-- 管理员后台视图 -->
     <div id="view-admin" class="view" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow: auto; padding: 2rem;">
         <div class="card" style="max-width: 900px; margin: 2rem auto; background: rgba(10,20,35,0.95);">
             <div class="flex-between">
@@ -317,10 +391,17 @@
     const API_BASE = 'https://webcom-lite-api.mgjack13.workers.dev';  // 请修改为你的 Worker 地址
     let currentToken = localStorage.getItem('webcom_token');
     let currentUser = null;
-    let currentChat = null;      // { type: 'room', id, name, announcement? } 或 { type: 'private', id, targetName, targetId }
+    let currentChat = null;
     let pollingInterval = null;
     let onlinePolling = null;
-    let isAdmin = false;         // 前端标记，实际每次操作后端验证
+    let isAdmin = false;
+
+    // 通知相关
+    let notificationPermissionGranted = false;
+    let lastMessageTimestamps = { room: {}, private: {} }; // 存储每个会话的最后一条消息时间
+    let soundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // 默认 true
+    let audioCtx = null;
+    let lastNotifiedMsgId = new Set();
 
     // DOM 元素
     const viewAuth = document.getElementById('view-auth');
@@ -352,6 +433,146 @@
     const adminAuthDiv = document.getElementById('adminAuthDiv');
     const adminContent = document.getElementById('adminContent');
     const adminAuthError = document.getElementById('adminAuthError');
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsMenuBtn = document.getElementById('settingsMenuBtn');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const soundToggle = document.getElementById('soundToggle');
+
+    // 初始化声音开关
+    soundToggle.checked = soundEnabled;
+    soundToggle.addEventListener('change', () => {
+        soundEnabled = soundToggle.checked;
+        localStorage.setItem('soundEnabled', soundEnabled);
+    });
+
+    function playNotificationSound() {
+        if (!soundEnabled) return;
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        // 使用 Web Audio 生成简单提示音
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = 880;
+        gain.gain.value = 0.2;
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+        osc.stop(audioCtx.currentTime + 0.5);
+        // 恢复 AudioContext（如果被挂起）
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    // 请求通知权限（非侵入式）
+    function requestNotificationPermission() {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "default") {
+            const banner = document.createElement('div');
+            banner.className = 'notification-banner';
+            banner.innerHTML = `<span>🔔 开启通知，新消息不错过</span><button id="enableNotifBtn">开启</button>`;
+            document.body.appendChild(banner);
+            document.getElementById('enableNotifBtn').onclick = () => {
+                Notification.requestPermission().then(perm => {
+                    notificationPermissionGranted = perm === 'granted';
+                    banner.remove();
+                });
+            };
+            setTimeout(() => { if(banner.parentNode) banner.remove(); }, 10000);
+        } else if (Notification.permission === "granted") {
+            notificationPermissionGranted = true;
+        }
+    }
+
+    function showSystemNotification(title, body, onClickUrl) {
+        if (!notificationPermissionGranted) return;
+        const notification = new Notification(title, { body, icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext x="50" y="50" font-size="80" text-anchor="middle" dy=".3em" fill="%235f9eff"%3E💬%3C/text%3E%3C/svg%3E' });
+        if (onClickUrl) {
+            notification.onclick = () => {
+                window.focus();
+                // 可扩展：自动切换聊天窗口
+            };
+        }
+        setTimeout(() => notification.close(), 5000);
+    }
+
+    let originalTitle = document.title;
+    let titleInterval = null;
+    function startTitleFlash() {
+        if (titleInterval) clearInterval(titleInterval);
+        titleInterval = setInterval(() => {
+            document.title = document.title === originalTitle ? '📨 新消息 - WebCom Lite' : originalTitle;
+        }, 800);
+    }
+    function stopTitleFlash() {
+        if (titleInterval) { clearInterval(titleInterval); titleInterval = null; }
+        document.title = originalTitle;
+    }
+    window.addEventListener('focus', () => stopTitleFlash());
+    window.addEventListener('blur', () => {}); // 闪动在收到消息时触发
+
+    // 绘制 Favicon 角标
+    function setFaviconBadge(count) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#5f9eff';
+        ctx.fillRect(0, 0, 32, 32);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(count > 9 ? '9+' : count, 8, 24);
+        const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        link.href = canvas.toDataURL();
+        document.head.appendChild(link);
+    }
+    function clearFaviconBadge() {
+        const link = document.querySelector("link[rel*='icon']");
+        if (link && link.href.includes('data:image')) {
+            link.href = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext x="50" y="50" font-size="80" text-anchor="middle" dy=".3em" fill="%235f9eff"%3E💬%3C/text%3E%3C/svg%3E';
+        }
+    }
+
+    let unreadCount = 0;
+    function incrementUnreadCount() {
+        unreadCount++;
+        setFaviconBadge(Math.min(unreadCount, 99));
+        if (document.hidden) startTitleFlash();
+    }
+    function resetUnreadCount() {
+        unreadCount = 0;
+        clearFaviconBadge();
+        stopTitleFlash();
+    }
+
+    // 检查新消息并触发通知
+    let lastSeenTimestamps = {};
+    function checkNewMessages(messages, type, identifier, chatName) {
+        if (!messages.length) return;
+        const latestMsg = messages[messages.length-1];
+        const lastSeen = lastSeenTimestamps[`${type}_${identifier}`] || 0;
+        let hasNew = false;
+        for (let msg of messages) {
+            if (msg.created_at > lastSeen && msg.sender_id !== currentUser?.user_id && !lastNotifiedMsgId.has(msg.message_id)) {
+                hasNew = true;
+                lastNotifiedMsgId.add(msg.message_id);
+                if (type === 'room') {
+                    showSystemNotification(`#${chatName}`, `${msg.username}: ${msg.content.substring(0, 80)}`, null);
+                } else {
+                    showSystemNotification(`💬 来自 ${msg.username}`, msg.content.substring(0, 80), null);
+                }
+                playNotificationSound();
+                incrementUnreadCount();
+            }
+        }
+        if (latestMsg.created_at > lastSeen) {
+            lastSeenTimestamps[`${type}_${identifier}`] = latestMsg.created_at;
+        }
+    }
 
     // Helper
     function showError(div, msg) { div.innerText = msg; setTimeout(() => div.innerText = '', 3000); }
@@ -364,7 +585,7 @@
     async function apiCall(path, method, body = null, needAuth = true, adminPass = null) {
         const headers = { 'Content-Type': 'application/json' };
         if (needAuth && currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
-        if (adminPass) headers['X-Admin-Password'] = adminPass;   // 管理员操作携带密码
+        if (adminPass) headers['X-Admin-Password'] = adminPass;
         const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
         if (res.status === 401 && needAuth) { logout(); throw new Error('登录过期'); }
         const data = await res.json();
@@ -395,6 +616,7 @@
         viewApp.classList.remove('active');
         viewAdmin.classList.remove('active');
         renderNavUnlogged();
+        resetUnreadCount();
     }
 
     async function loadProfile() {
@@ -404,11 +626,12 @@
         loadRooms();
         loadOnlineUsers();
         startPolling();
-        // 检查管理员权限
         try {
             await apiCall('/api/admin/check', 'GET');
             isAdmin = true;
         } catch(e) { isAdmin = false; }
+        // 请求通知权限
+        requestNotificationPermission();
     }
 
     async function loadRooms() {
@@ -469,10 +692,10 @@
 
     async function openChat(chat) {
         currentChat = chat;
+        resetUnreadCount();
         if (chat.type === 'room') {
             chatTitleSpan.innerText = `# ${chat.name}`;
             chatTypeBadge.innerText = '群聊';
-            // 获取房间公告
             try {
                 const roomInfo = await apiCall(`/api/room-info?room_id=${chat.id}`, 'GET');
                 if(roomInfo.announcement) {
@@ -503,11 +726,14 @@
         let msgs = [];
         if (type === 'room') {
             msgs = await apiCall(`/api/messages?room_id=${id}&limit=50`, 'GET');
-            // 上报已读 (群聊简单标记)
             await apiCall('/api/mark-read', 'POST', { room_id: id, message_ids: msgs.map(m=>m.message_id) }).catch(e=>console.warn);
+            const chatName = currentChat?.name || '';
+            checkNewMessages(msgs, 'room', id, chatName);
         } else {
             msgs = await apiCall(`/api/private-messages?conversation_id=${id}&limit=50`, 'GET');
             await apiCall('/api/mark-read-private', 'POST', { conversation_id: id, message_ids: msgs.map(m=>m.message_id) }).catch(e=>console.warn);
+            const targetName = currentChat?.targetName || '';
+            checkNewMessages(msgs, 'private', id, targetName);
         }
         messageArea.innerHTML = msgs.map(m => `
             <div class="message-bubble" data-msg-id="${m.message_id}" data-sender="${m.sender_id}">
@@ -522,7 +748,6 @@
                 <div style="word-break: break-word;">${escapeHtml(m.content)}</div>
             </div>
         `).join('');
-        // 添加引用点击
         document.querySelectorAll('.message-bubble').forEach(el => {
             el.addEventListener('click', (e) => {
                 if(e.target.classList.contains('message-user')) return;
@@ -571,7 +796,6 @@
         onlinePolling = setInterval(() => loadOnlineUsers(), 5000);
     }
 
-    // 导航
     function renderNavUnlogged() {
         navLinks.innerHTML = `<span style="color:#aaa;">未登录</span>`;
     }
@@ -598,7 +822,7 @@
         } catch(e) { alert('修改失败：'+e.message); }
     }
 
-    // 管理员后台逻辑（前端UI + 调用后端API，后端需要实现对应端点）
+    // 管理员后台
     adminPanelBtn.onclick = () => {
         viewAdmin.classList.add('active');
         viewApp.classList.remove('active');
@@ -696,7 +920,6 @@
         alert('已授予管理员权限');
         loadAdminUsers();
     };
-    // tabs
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
@@ -709,6 +932,17 @@
             if(tab === 'grant') document.getElementById('adminTabGrant').style.display = 'block';
         };
     });
+
+    // 设置浮窗
+    settingsMenuBtn.onclick = () => {
+        settingsModal.style.display = 'flex';
+    };
+    closeSettingsBtn.onclick = () => {
+        settingsModal.style.display = 'none';
+    };
+    window.onclick = (e) => {
+        if (e.target === settingsModal) settingsModal.style.display = 'none';
+    };
 
     // 登录注册事件
     showLoginBtn.onclick = () => { loginFormDiv.style.display = 'block'; registerFormDiv.style.display = 'none'; showLoginBtn.classList.add('active'); showRegisterBtn.classList.remove('active'); };
