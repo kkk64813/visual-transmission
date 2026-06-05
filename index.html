@@ -281,33 +281,33 @@
 
     function sendSupport(data) { let msgs = JSON.parse(localStorage.getItem('mg_support_messages') || '[]'); msgs.push({ ...data, time: new Date().toISOString() }); localStorage.setItem('mg_support_messages', JSON.stringify(msgs)); showToast("Message sent"); addTerminalLog(`Support from ${data.email}`, true); }
 
-    async function openAdminLogin() {
-        let pwd = prompt(t('adminLogin') + " Password:");
-        if (!pwd) return;
-        try {
-            const res = await fetch(`${API_BASE}/api/admin-login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: 'admin', password: pwd }),
-                credentials: 'include'
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
-                state.adminLoggedIn = true;
-                state.adminMode = true;
-                // 从后端获取最新模块配置（管理员也要同步）
-                await fetchPublicModules();
-                render();
-                addTerminalLog("Admin access granted", true);
-                showToast("Admin mode enabled");
-            } else {
-                showToast(data.message || "Invalid admin credentials", true);
-            }
-        } catch(err) {
-            console.error(err);
-            showToast("Admin login error: " + err.message, true);
+async function openAdminLogin() {
+    let pwd = prompt(t('adminLogin') + " Password:");
+    if (!pwd) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin-login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'admin', password: pwd })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            // 保存 token 到 localStorage
+            localStorage.setItem('mg_admin_token', data.token);
+            state.adminLoggedIn = true;
+            state.adminMode = true;
+            await fetchPublicModules();
+            render();
+            addTerminalLog("Admin access granted", true);
+            showToast("Admin mode enabled");
+        } else {
+            showToast(data.message || "Invalid admin credentials", true);
         }
+    } catch(err) {
+        console.error(err);
+        showToast("Admin login error: " + err.message, true);
     }
+}
 
     async function generateActivationCode(duration, modulesArray) {
         const modulesStr = modulesArray.join(',');
