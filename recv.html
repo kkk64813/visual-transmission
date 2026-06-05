@@ -2,6 +2,29 @@
 <html lang="en" data-framework="javascript">
 
 <head>
+
+<script>
+(async () => {
+  const API_BASE = 'https://mg-secret-vault.mgjack13.workers.dev';
+  try {
+    const resp = await fetch(`${API_BASE}/api/check-module?module=DECODER`, {
+      credentials: 'include'
+    });
+    const data = await resp.json();
+    if (!data.allowed) {
+      alert('Please activate your license.');
+      location.href = 'index.html';
+      return;
+    }
+  } catch (err) {
+    alert('License verification failed.');
+    location.href = 'index.html';
+  }
+})();
+</script>
+
+
+
   <title>Cimbar Decoder</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, user-scalable=no">
