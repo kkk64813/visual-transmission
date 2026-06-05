@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+
+<script>
+(async () => {
+  const API_BASE = 'https://mg-secret-vault.mgjack13.workers.dev';
+  try {
+    const resp = await fetch(`${API_BASE}/api/check-module?module=SERVERLESS`, {
+      credentials: 'include'
+    });
+    const data = await resp.json();
+    if (!data.allowed) {
+      alert('Please activate your license.');
+      location.href = 'index.html';
+      return;
+    }
+  } catch (err) {
+    alert('License verification failed.');
+    location.href = 'index.html';
+  }
+})();
+</script>
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secret Chat Zero Server</title>
