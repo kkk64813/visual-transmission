@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>WebCom Lite · 极简聊天室</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' font-size='80' text-anchor='middle' dy='.3em' fill='%235f9eff'%3E💬%3C/text%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' font-size='80' text-anchor='middle' dy='.3em' fill='%23ff8c00'%3E💬%3C/text%3E%3C/svg%3E">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,18 +13,18 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
-            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03050b);
+            font-family: 'Orbitron', 'Share Tech Mono', monospace;
+            background: #000000;
+            background-image: radial-gradient(circle at 10% 20%, rgba(255,140,0,0.08) 0%, #000000 90%);
             min-height: 100vh;
-            color: #eef5ff;
-            backdrop-filter: blur(2px);
+            color: #e0e0e0;
         }
         .glass {
-            background: rgba(15, 25, 45, 0.55);
+            background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(12px);
             border-radius: 2rem;
-            border: 1px solid rgba(90, 150, 220, 0.25);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 140, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.2);
         }
         .app-container {
             max-width: 1400px;
@@ -45,69 +46,77 @@
             align-items: center;
             padding: 0.8rem 1.5rem;
             margin-bottom: 1.5rem;
-            background: rgba(10, 20, 35, 0.7);
+            background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(16px);
             border-radius: 3rem;
-            border: 1px solid rgba(80, 140, 210, 0.3);
+            border: 1px solid rgba(255, 140, 0, 0.6);
         }
         .logo {
-            font-weight: 700;
+            font-weight: 800;
             font-size: 1.5rem;
-            background: linear-gradient(135deg, #a0c0ff, #5f9eff);
+            background: linear-gradient(135deg, #ffaa33, #ff8c00);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            letter-spacing: 2px;
         }
         .nav-links {
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
+            align-items: center;
         }
         .nav-btn {
             background: none;
             border: none;
-            color: #bbd4ff;
+            color: #ffcc80;
             font-size: 0.9rem;
             padding: 0.5rem 1rem;
             border-radius: 2rem;
             cursor: pointer;
             transition: 0.2s;
+            font-family: inherit;
         }
         .nav-btn.active, .nav-btn:hover {
-            background: rgba(80, 140, 255, 0.3);
-            color: white;
-            box-shadow: 0 0 8px rgba(80, 140, 255, 0.3);
+            background: rgba(255, 140, 0, 0.3);
+            color: #ffaa33;
+            box-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
+            text-shadow: 0 0 2px orange;
         }
         .card {
-            background: rgba(20, 32, 55, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(12px);
             border-radius: 1.5rem;
             padding: 1.5rem;
-            border: 1px solid rgba(100, 160, 240, 0.2);
+            border: 1px solid rgba(255, 140, 0, 0.4);
         }
         input, textarea, button {
-            background: rgba(10, 18, 30, 0.8);
-            border: 1px solid #2d3e5f;
-            color: #eef5ff;
+            background: rgba(20, 20, 30, 0.9);
+            border: 1px solid #ff8c00;
+            color: #ffcc80;
             border-radius: 1.2rem;
             padding: 0.7rem 1rem;
             font-size: 0.9rem;
             outline: none;
             transition: 0.2s;
+            font-family: inherit;
         }
         input:focus, textarea:focus {
-            border-color: #5f9eff;
-            box-shadow: 0 0 0 2px rgba(95, 158, 255, 0.2);
+            border-color: #ffaa33;
+            box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.3);
         }
         button {
-            background: linear-gradient(135deg, #2b4b9e, #1f3a7a);
+            background: linear-gradient(135deg, #ff8c00, #b85e00);
             border: none;
             font-weight: 600;
             cursor: pointer;
+            color: black;
+            font-weight: bold;
         }
         button:hover {
-            background: linear-gradient(135deg, #3a60b5, #2a4890);
+            background: linear-gradient(135deg, #ffaa33, #ff8c00);
             transform: scale(0.98);
+            box-shadow: 0 0 12px orange;
         }
         .message-list {
             display: flex;
@@ -118,27 +127,27 @@
             padding-right: 0.5rem;
         }
         .message-bubble {
-            background: rgba(30, 45, 70, 0.7);
+            background: rgba(30, 30, 40, 0.8);
             border-radius: 1.2rem;
             padding: 0.6rem 1rem;
-            border-left: 4px solid #5f9eff;
+            border-left: 4px solid #ff8c00;
             position: relative;
             cursor: pointer;
         }
         .message-user {
             font-weight: bold;
-            color: #9ac4ff;
+            color: #ffaa33;
             font-size: 0.8rem;
             cursor: pointer;
         }
         .message-time {
             font-size: 0.7rem;
-            color: #8aa0c0;
+            color: #aa8866;
             margin-left: 0.8rem;
         }
         .read-status {
             font-size: 0.65rem;
-            color: #6f8fc0;
+            color: #ffaa33;
             margin-left: 0.5rem;
         }
         .online-user {
@@ -147,7 +156,7 @@
             gap: 0.6rem;
             padding: 0.5rem;
             border-radius: 2rem;
-            background: rgba(40, 60, 90, 0.4);
+            background: rgba(50, 40, 30, 0.5);
             margin-bottom: 0.5rem;
         }
         .status-dot {
@@ -159,12 +168,12 @@
         }
         .status-dot.offline { background: #6c757d; box-shadow: none; }
         .room-item, .user-item { cursor: pointer; transition: 0.1s; }
-        .room-item:hover, .user-item:hover { background: rgba(80, 140, 255, 0.2); }
+        .room-item:hover, .user-item:hover { background: rgba(255, 140, 0, 0.2); }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .error-msg { color: #ff9f8f; font-size: 0.8rem; margin-top: 0.5rem; }
+        .error-msg { color: #ff6f4f; font-size: 0.8rem; margin-top: 0.5rem; }
         .quote-block {
-            background: rgba(255,255,200,0.1);
+            background: rgba(255,140,0,0.1);
             border-left: 3px solid #ffb347;
             padding: 4px 8px;
             margin-bottom: 6px;
@@ -172,35 +181,37 @@
             border-radius: 8px;
         }
         .admin-badge {
-            background: #ff9800;
-            color: #1a1e2a;
+            background: #ff8c00;
+            color: black;
             font-size: 0.7rem;
             border-radius: 20px;
             padding: 2px 8px;
             margin-left: 8px;
+            font-weight: bold;
         }
         .announcement {
-            background: #1e2a3a;
+            background: #1e1a10;
             border-radius: 16px;
             padding: 8px 12px;
             margin-bottom: 12px;
             font-size: 0.85rem;
-            border-left: 3px solid #ffc107;
+            border-left: 3px solid #ff8c00;
+            color: #ffcc88;
         }
         .notification-banner {
             position: fixed;
             bottom: 20px;
             left: 20px;
             right: 20px;
-            background: #1e3a5f;
+            background: #1a1a1a;
             border-radius: 2rem;
             padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 2000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 1px solid #5f9eff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border: 1px solid #ff8c00;
             animation: slideUp 0.3s ease;
         }
         @keyframes slideUp {
@@ -208,7 +219,7 @@
             to { transform: translateY(0); opacity: 1; }
         }
         .notification-banner button {
-            background: #5f9eff;
+            background: #ff8c00;
             padding: 4px 12px;
             border-radius: 2rem;
         }
@@ -217,14 +228,15 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #0f1a2e;
+            background: #0a0a0a;
             border-radius: 2rem;
             padding: 1.5rem;
             z-index: 1001;
             width: 280px;
             text-align: center;
-            border: 1px solid #5f9eff;
+            border: 1px solid #ff8c00;
         }
+        /* 手机竖屏布局 */
         @media (max-width: 768px) {
             .grid-2col {
                 grid-template-columns: 1fr;
@@ -249,6 +261,52 @@
                 gap: 0.8rem;
             }
         }
+        /* 表情选择器面板 */
+        .emoji-picker {
+            position: absolute;
+            bottom: 70px;
+            left: 20px;
+            background: #1a1a1a;
+            border: 1px solid #ff8c00;
+            border-radius: 1rem;
+            padding: 0.5rem;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.4rem;
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .emoji-btn {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 0.2rem;
+            transition: 0.1s;
+        }
+        .emoji-btn:hover {
+            transform: scale(1.2);
+            background: rgba(255,140,0,0.3);
+            border-radius: 0.5rem;
+        }
+        /* 搜索高亮 */
+        .search-highlight {
+            background-color: #ff8c00;
+            color: black;
+            padding: 0 2px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .search-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 0.4rem 0.8rem;
+        }
     </style>
 </head>
 <body>
@@ -261,22 +319,22 @@
     <!-- 未登录视图 -->
     <div id="view-auth" class="view active">
         <div class="card" style="max-width: 450px; margin: 2rem auto;">
-            <h2 style="margin-bottom: 1.5rem;">✨ 欢迎回来</h2>
+            <h2 style="margin-bottom: 1.5rem; color:#ffaa33;" id="authTitle">✨ 欢迎回来</h2>
             <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                <button id="showLoginBtn" class="nav-btn active" style="flex:1">登录</button>
-                <button id="showRegisterBtn" class="nav-btn" style="flex:1">注册</button>
+                <button id="showLoginBtn" class="nav-btn active" style="flex:1" data-i18n="loginTab">登录</button>
+                <button id="showRegisterBtn" class="nav-btn" style="flex:1" data-i18n="registerTab">注册</button>
             </div>
             <div id="loginForm">
                 <input type="text" id="loginUsername" placeholder="用户名" autocomplete="username">
                 <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" style="margin-top: 1rem;">
-                <button id="doLoginBtn" style="margin-top: 1.5rem; width:100%">登录 →</button>
+                <button id="doLoginBtn" style="margin-top: 1.5rem; width:100%" data-i18n="loginBtn">登录 →</button>
                 <div id="loginError" class="error-msg"></div>
             </div>
             <div id="registerForm" style="display: none;">
                 <input type="text" id="regUsername" placeholder="用户名 (3-20字符, 字母数字_)">
                 <input type="password" id="regPassword" placeholder="密码 (6-64字符)" style="margin-top: 1rem;">
                 <input type="password" id="regConfirm" placeholder="确认密码" style="margin-top: 1rem;">
-                <button id="doRegisterBtn" style="margin-top: 1.5rem; width:100%">注册 →</button>
+                <button id="doRegisterBtn" style="margin-top: 1.5rem; width:100%" data-i18n="registerBtn">注册 →</button>
                 <div id="regError" class="error-msg"></div>
             </div>
         </div>
@@ -285,20 +343,20 @@
     <!-- 主应用视图 -->
     <div id="view-app" class="view">
         <div class="grid-2col" style="gap: 1.2rem;">
-            <!-- 左侧：房间列表 + 在线用户 -->
+            <!-- 左侧 -->
             <div>
                 <div class="card" style="margin-bottom: 1rem;">
                     <div class="flex-between">
-                        <h3>📢 聊天室大厅</h3>
+                        <h3 data-i18n="roomsTitle">📢 聊天室大厅</h3>
                         <div>
-                            <button id="adminPanelBtn" style="padding: 0.3rem 1rem; margin-right: 0.5rem;">⚙️ 管理</button>
-                            <button id="createRoomBtn" style="padding: 0.3rem 1rem;">+ 创建</button>
+                            <button id="adminPanelBtn" style="padding: 0.3rem 1rem; margin-right: 0.5rem;" data-i18n="adminBtn">⚙️ 管理</button>
+                            <button id="createRoomBtn" style="padding: 0.3rem 1rem;" data-i18n="createRoomBtn">+ 创建</button>
                         </div>
                     </div>
                     <div id="roomList" class="room-list-container" style="margin-top: 1rem;"></div>
                 </div>
                 <div class="card">
-                    <h3>👥 在线用户</h3>
+                    <h3 data-i18n="onlineUsersTitle">👥 在线用户</h3>
                     <div id="onlineUsersList" class="online-users-container" style="margin-top: 0.8rem;"></div>
                 </div>
             </div>
@@ -308,78 +366,84 @@
                 <div class="flex-between">
                     <div>
                         <span id="chatTitle">💬 未选择聊天</span>
-                        <span id="chatTypeBadge" style="font-size:0.7rem; background:#2a3f6e; padding:2px 8px; border-radius:20px; margin-left:8px;">群聊</span>
+                        <span id="chatTypeBadge" style="font-size:0.7rem; background:#3a2a1a; padding:2px 8px; border-radius:20px; margin-left:8px;" data-i18n="groupChatBadge">群聊</span>
                     </div>
                     <div>
-                        <button id="settingsMenuBtn" style="background: none; border:1px solid #4f6f9f; margin-right: 6px;">⚙️</button>
-                        <button id="closeChatBtn" style="background: none; border:1px solid #4f6f9f;">✕ 关闭</button>
+                        <button id="settingsMenuBtn" style="background: none; border:1px solid #ff8c00; margin-right: 6px;" data-i18n="settingsBtn">⚙️</button>
+                        <button id="closeChatBtn" style="background: none; border:1px solid #ff8c00;" data-i18n="closeChatBtn">✕ 关闭</button>
                     </div>
                 </div>
                 <div id="announcementArea" class="announcement" style="display: none;"></div>
-                <div id="messageArea" class="message-list" style="flex:1; margin: 1rem 0;"></div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <input type="text" id="messageInput" placeholder="输入消息... (点击消息引用)" maxlength="2000" style="flex:1;">
-                    <button id="sendMsgBtn">发送</button>
+                <!-- 搜索栏 -->
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="🔍 搜索当前聊天消息..." data-i18n-placeholder="searchPlaceholder">
+                    <button id="searchPrevBtn" title="上一个" style="padding:0 10px;">↑</button>
+                    <button id="searchNextBtn" title="下一个" style="padding:0 10px;">↓</button>
+                    <button id="clearSearchBtn" style="padding:0 10px;">✕</button>
                 </div>
+                <div id="messageArea" class="message-list" style="flex:1; margin: 1rem 0;"></div>
+                <div style="display: flex; gap: 0.5rem; position: relative;">
+                    <input type="text" id="messageInput" placeholder="输入消息... (点击消息引用)" maxlength="2000" style="flex:1;">
+                    <button id="emojiBtn" style="padding:0 12px;">😀</button>
+                    <button id="sendMsgBtn" data-i18n="sendBtn">发送</button>
+                </div>
+                <div id="emojiPicker" class="emoji-picker" style="display: none;"></div>
             </div>
         </div>
     </div>
 
     <!-- 设置浮窗 -->
-    <div id="settingsModal" style="display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); z-index: 2001; align-items: center; justify-content: center;">
+    <div id="settingsModal" style="display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); z-index: 2001; align-items: center; justify-content: center;">
         <div class="settings-panel">
-            <h4>⚙️ 设置</h4>
+            <h4 data-i18n="settingsTitle">⚙️ 设置</h4>
             <label style="display: flex; justify-content: space-between; margin: 1rem 0;">
-                <span>🔔 声音提示</span>
+                <span data-i18n="soundLabel">🔔 声音提示</span>
                 <input type="checkbox" id="soundToggle" checked>
             </label>
-            <button id="closeSettingsBtn">关闭</button>
+            <label style="display: flex; justify-content: space-between; margin: 1rem 0;">
+                <span data-i18n="languageLabel">🌐 语言</span>
+                <select id="languageSelect">
+                    <option value="zh">中文</option>
+                    <option value="en">English</option>
+                </select>
+            </label>
+            <button id="closeSettingsBtn" data-i18n="closeBtn">关闭</button>
         </div>
     </div>
 
     <!-- 管理员后台视图 -->
-    <div id="view-admin" class="view" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow: auto; padding: 2rem;">
-        <div class="card" style="max-width: 900px; margin: 2rem auto; background: rgba(10,20,35,0.95);">
+    <div id="view-admin" class="view" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 1000; overflow: auto; padding: 2rem;">
+        <div class="card" style="max-width: 900px; margin: 2rem auto; background: rgba(0,0,0,0.95);">
             <div class="flex-between">
-                <h2>🔧 管理后台</h2>
-                <button id="closeAdminBtn" style="background: none; border:1px solid red;">关闭</button>
+                <h2 data-i18n="adminPanelTitle">🔧 管理后台</h2>
+                <button id="closeAdminBtn" style="background: none; border:1px solid #ff8c00;" data-i18n="closeBtn">关闭</button>
             </div>
             <div id="adminAuthDiv" style="margin: 1rem 0;">
                 <input type="password" id="adminPassword" placeholder="管理员密码" style="width: 200px;">
-                <button id="adminLoginBtn">验证</button>
+                <button id="adminLoginBtn" data-i18n="verifyBtn">验证</button>
                 <div id="adminAuthError" class="error-msg"></div>
             </div>
             <div id="adminContent" style="display: none;">
-                <div style="display: flex; gap: 1rem; border-bottom: 1px solid #3a4f6f; margin-bottom: 1rem;">
-                    <button class="admin-tab-btn active" data-tab="users">👥 用户管理</button>
-                    <button class="admin-tab-btn" data-tab="rooms">🏠 房间管理</button>
-                    <button class="admin-tab-btn" data-tab="clean">🗑️ 清理记录</button>
-                    <button class="admin-tab-btn" data-tab="grant">👑 权限下发</button>
+                <div style="display: flex; gap: 1rem; border-bottom: 1px solid #ff8c00; margin-bottom: 1rem;">
+                    <button class="admin-tab-btn active" data-tab="users" data-i18n="userMgmt">👥 用户管理</button>
+                    <button class="admin-tab-btn" data-tab="rooms" data-i18n="roomMgmt">🏠 房间管理</button>
+                    <button class="admin-tab-btn" data-tab="clean" data-i18n="cleanRecords">🗑️ 清理记录</button>
+                    <button class="admin-tab-btn" data-tab="grant" data-i18n="grantAdmin">👑 权限下发</button>
                 </div>
-                <div id="adminTabUsers" class="admin-tab active">
-                    <h4>用户列表</h4>
-                    <div id="adminUserList" style="max-height: 50vh; overflow-y: auto;"></div>
-                </div>
-                <div id="adminTabRooms" class="admin-tab" style="display: none;">
-                    <h4>聊天室列表</h4>
-                    <div id="adminRoomList" style="max-height: 50vh; overflow-y: auto;"></div>
-                </div>
+                <div id="adminTabUsers" class="admin-tab active"><div id="adminUserList"></div></div>
+                <div id="adminTabRooms" class="admin-tab" style="display: none;"><div id="adminRoomList"></div></div>
                 <div id="adminTabClean" class="admin-tab" style="display: none;">
-                    <h4>清理聊天记录</h4>
-                    <p>清除指定天数前的所有消息（群聊+私聊）</p>
-                    <input type="number" id="cleanDays" placeholder="天数 (如 7)" value="7" style="width: 120px;">
-                    <button id="cleanMessagesBtn">清除</button>
-                    <hr style="margin: 1rem 0;">
-                    <h4>删除单条消息</h4>
+                    <h4 data-i18n="cleanOld">清理旧消息</h4>
+                    <input type="number" id="cleanDays" placeholder="天数" value="7">
+                    <button id="cleanMessagesBtn" data-i18n="cleanBtn">清除</button>
+                    <hr><h4 data-i18n="deleteSingle">删除单条消息</h4>
                     <input type="text" id="deleteMsgId" placeholder="消息ID">
-                    <button id="deleteSingleMsgBtn">删除</button>
-                    <div id="cleanResult"></div>
+                    <button id="deleteSingleMsgBtn" data-i18n="deleteBtn">删除</button>
                 </div>
                 <div id="adminTabGrant" class="admin-tab" style="display: none;">
-                    <h4>将管理员权限下发给其他用户</h4>
-                    <input type="text" id="grantUserId" placeholder="用户ID (U开头的7位)">
-                    <button id="grantAdminBtn">授予管理员</button>
-                    <div id="grantResult"></div>
+                    <h4 data-i18n="grantDesc">授予管理员权限</h4>
+                    <input type="text" id="grantUserId" placeholder="用户ID">
+                    <button id="grantAdminBtn" data-i18n="grantBtn">授予</button>
                 </div>
             </div>
         </div>
@@ -396,61 +460,87 @@
     let onlinePolling = null;
     let isAdmin = false;
 
+    // 国际化
+    let currentLang = localStorage.getItem('webcom_lang') || 'zh';
+    const i18n = {
+        zh: {
+            loginTab: '登录', registerTab: '注册', loginBtn: '登录 →', registerBtn: '注册 →',
+            roomsTitle: '📢 聊天室大厅', adminBtn: '⚙️ 管理', createRoomBtn: '+ 创建',
+            onlineUsersTitle: '👥 在线用户', groupChatBadge: '群聊', settingsBtn: '⚙️',
+            closeChatBtn: '✕ 关闭', sendBtn: '发送', settingsTitle: '⚙️ 设置',
+            soundLabel: '🔔 声音提示', languageLabel: '🌐 语言', closeBtn: '关闭',
+            adminPanelTitle: '🔧 管理后台', verifyBtn: '验证', userMgmt: '👥 用户管理',
+            roomMgmt: '🏠 房间管理', cleanRecords: '🗑️ 清理记录', grantAdmin: '👑 权限下发',
+            cleanOld: '清理旧消息', cleanBtn: '清除', deleteSingle: '删除单条消息',
+            deleteBtn: '删除', grantDesc: '授予管理员权限', grantBtn: '授予',
+            searchPlaceholder: '🔍 搜索当前聊天消息...', quoteHint: ' (点击消息引用)',
+            noChat: '选择左侧房间或用户开始聊天', newMsgNotif: '🔔 开启通知，新消息不错过',
+            enableBtn: '开启', copySuccess: '复制成功', joinRoomFirst: '请先加入房间',
+            sendFailed: '发送失败', passwordChanged: '密码修改成功，请重新登录',
+            changePwdFail: '修改失败：', needLogin: '登录过期', needAdminPwd: '需要管理员密码',
+            muteUser: '禁言', unmuteUser: '解除禁言', deleteUserConfirm: '永久删除用户及其所有数据？',
+            deleteRoomConfirm: '删除房间会清空所有消息和成员', cleanDone: '清理完成',
+            msgDeleted: '已删除', granted: '已授予管理员权限', invalidRoomName: '无效的房间名',
+            roomCreated: '房间已创建', joined: '已加入', left: '已退出',
+            announcementUpdated: '公告已更新', messageTooLong: '消息过长'
+        },
+        en: {
+            loginTab: 'Login', registerTab: 'Register', loginBtn: 'Login →', registerBtn: 'Register →',
+            roomsTitle: '📢 Chat Rooms', adminBtn: '⚙️ Admin', createRoomBtn: '+ Create',
+            onlineUsersTitle: '👥 Online Users', groupChatBadge: 'Group', settingsBtn: '⚙️',
+            closeChatBtn: '✕ Close', sendBtn: 'Send', settingsTitle: '⚙️ Settings',
+            soundLabel: '🔔 Sound Alert', languageLabel: '🌐 Language', closeBtn: 'Close',
+            adminPanelTitle: '🔧 Admin Panel', verifyBtn: 'Verify', userMgmt: '👥 User Mgmt',
+            roomMgmt: '🏠 Room Mgmt', cleanRecords: '🗑️ Clean Logs', grantAdmin: '👑 Grant Admin',
+            cleanOld: 'Clean old messages', cleanBtn: 'Clean', deleteSingle: 'Delete single message',
+            deleteBtn: 'Delete', grantDesc: 'Grant admin privileges', grantBtn: 'Grant',
+            searchPlaceholder: '🔍 Search current chat...', quoteHint: ' (click message to quote)',
+            noChat: 'Select a room or user to start chatting', newMsgNotif: '🔔 Enable notifications for new messages',
+            enableBtn: 'Enable', copySuccess: 'Copied', joinRoomFirst: 'Please join the room first',
+            sendFailed: 'Send failed', passwordChanged: 'Password changed, please login again',
+            changePwdFail: 'Change failed: ', needLogin: 'Session expired', needAdminPwd: 'Admin password required',
+            muteUser: 'Mute', unmuteUser: 'Unmute', deleteUserConfirm: 'Permanently delete user and all data?',
+            deleteRoomConfirm: 'Deleting room will erase all messages and members', cleanDone: 'Cleaned',
+            msgDeleted: 'Deleted', granted: 'Admin granted', invalidRoomName: 'Invalid room name',
+            roomCreated: 'Room created', joined: 'Joined', left: 'Left',
+            announcementUpdated: 'Announcement updated', messageTooLong: 'Message too long'
+        }
+    };
+    function t(key) { return i18n[currentLang][key] || key; }
+    function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('webcom_lang', lang);
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (key) el.innerText = t(key);
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (key) el.placeholder = t(key);
+        });
+        document.getElementById('authTitle').innerText = currentLang === 'zh' ? '✨ 欢迎回来' : '✨ Welcome Back';
+        // 重新加载当前视图的文字（动态部分）
+        if (currentUser) loadRooms();
+    }
+    document.getElementById('languageSelect').value = currentLang;
+    document.getElementById('languageSelect').addEventListener('change', (e) => setLanguage(e.target.value));
+    setLanguage(currentLang);
+
     // 通知相关
     let notificationPermissionGranted = false;
-    let lastMessageTimestamps = { room: {}, private: {} }; // 存储每个会话的最后一条消息时间
-    let soundEnabled = localStorage.getItem('soundEnabled') !== 'false'; // 默认 true
+    let lastSeenTimestamps = {};
+    let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
     let audioCtx = null;
+    let audioUnlocked = false;
     let lastNotifiedMsgId = new Set();
-
-    // DOM 元素
-    const viewAuth = document.getElementById('view-auth');
-    const viewApp = document.getElementById('view-app');
-    const viewAdmin = document.getElementById('view-admin');
-    const navLinks = document.getElementById('navLinks');
-    const loginFormDiv = document.getElementById('loginForm');
-    const registerFormDiv = document.getElementById('registerForm');
-    const showLoginBtn = document.getElementById('showLoginBtn');
-    const showRegisterBtn = document.getElementById('showRegisterBtn');
-    const doLoginBtn = document.getElementById('doLoginBtn');
-    const doRegisterBtn = document.getElementById('doRegisterBtn');
-    const loginError = document.getElementById('loginError');
-    const regError = document.getElementById('regError');
-    const createRoomBtn = document.getElementById('createRoomBtn');
-    const roomListDiv = document.getElementById('roomList');
-    const onlineUsersDiv = document.getElementById('onlineUsersList');
-    const chatTitleSpan = document.getElementById('chatTitle');
-    const chatTypeBadge = document.getElementById('chatTypeBadge');
-    const closeChatBtn = document.getElementById('closeChatBtn');
-    const messageArea = document.getElementById('messageArea');
-    const messageInput = document.getElementById('messageInput');
-    const sendMsgBtn = document.getElementById('sendMsgBtn');
-    const announcementDiv = document.getElementById('announcementArea');
-    const adminPanelBtn = document.getElementById('adminPanelBtn');
-    const closeAdminBtn = document.getElementById('closeAdminBtn');
-    const adminLoginBtn = document.getElementById('adminLoginBtn');
-    const adminPassword = document.getElementById('adminPassword');
-    const adminAuthDiv = document.getElementById('adminAuthDiv');
-    const adminContent = document.getElementById('adminContent');
-    const adminAuthError = document.getElementById('adminAuthError');
-    const settingsModal = document.getElementById('settingsModal');
-    const settingsMenuBtn = document.getElementById('settingsMenuBtn');
-    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-    const soundToggle = document.getElementById('soundToggle');
-
-    // 初始化声音开关
-    soundToggle.checked = soundEnabled;
-    soundToggle.addEventListener('change', () => {
-        soundEnabled = soundToggle.checked;
-        localStorage.setItem('soundEnabled', soundEnabled);
-    });
+    let unreadCount = 0;
 
     function playNotificationSound() {
         if (!soundEnabled) return;
+        if (!audioUnlocked) return;
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-        // 使用 Web Audio 生成简单提示音
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
@@ -460,19 +550,33 @@
         osc.start();
         gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
         osc.stop(audioCtx.currentTime + 0.5);
-        // 恢复 AudioContext（如果被挂起）
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    // 请求通知权限（非侵入式）
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.start();
+        audioCtx.resume().then(() => audioUnlocked = true);
+    }
+    document.addEventListener('click', unlockAudio, { once: true });
+
+    function showSystemNotification(title, body) {
+        if (!notificationPermissionGranted) return;
+        const notification = new Notification(title, { body, icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext x="50" y="50" font-size="80" text-anchor="middle" dy=".3em" fill="%23ff8c00"%3E💬%3C/text%3E%3C/svg%3E' });
+        setTimeout(() => notification.close(), 5000);
+    }
+
     function requestNotificationPermission() {
         if (!("Notification" in window)) return;
         if (Notification.permission === "default") {
             const banner = document.createElement('div');
             banner.className = 'notification-banner';
-            banner.innerHTML = `<span>🔔 开启通知，新消息不错过</span><button id="enableNotifBtn">开启</button>`;
+            banner.innerHTML = `<span>${t('newMsgNotif')}</span><button id="enableNotifBtn">${t('enableBtn')}</button>`;
             document.body.appendChild(banner);
             document.getElementById('enableNotifBtn').onclick = () => {
                 Notification.requestPermission().then(perm => {
@@ -486,24 +590,12 @@
         }
     }
 
-    function showSystemNotification(title, body, onClickUrl) {
-        if (!notificationPermissionGranted) return;
-        const notification = new Notification(title, { body, icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext x="50" y="50" font-size="80" text-anchor="middle" dy=".3em" fill="%235f9eff"%3E💬%3C/text%3E%3C/svg%3E' });
-        if (onClickUrl) {
-            notification.onclick = () => {
-                window.focus();
-                // 可扩展：自动切换聊天窗口
-            };
-        }
-        setTimeout(() => notification.close(), 5000);
-    }
-
     let originalTitle = document.title;
     let titleInterval = null;
     function startTitleFlash() {
         if (titleInterval) clearInterval(titleInterval);
         titleInterval = setInterval(() => {
-            document.title = document.title === originalTitle ? '📨 新消息 - WebCom Lite' : originalTitle;
+            document.title = document.title === originalTitle ? '📨 New message - WebCom Lite' : originalTitle;
         }, 800);
     }
     function stopTitleFlash() {
@@ -511,17 +603,15 @@
         document.title = originalTitle;
     }
     window.addEventListener('focus', () => stopTitleFlash());
-    window.addEventListener('blur', () => {}); // 闪动在收到消息时触发
 
-    // 绘制 Favicon 角标
     function setFaviconBadge(count) {
         const canvas = document.createElement('canvas');
         canvas.width = 32;
         canvas.height = 32;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#5f9eff';
+        ctx.fillStyle = '#ff8c00';
         ctx.fillRect(0, 0, 32, 32);
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = 'black';
         ctx.font = 'bold 20px sans-serif';
         ctx.fillText(count > 9 ? '9+' : count, 8, 24);
         const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
@@ -533,11 +623,9 @@
     function clearFaviconBadge() {
         const link = document.querySelector("link[rel*='icon']");
         if (link && link.href.includes('data:image')) {
-            link.href = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext x="50" y="50" font-size="80" text-anchor="middle" dy=".3em" fill="%235f9eff"%3E💬%3C/text%3E%3C/svg%3E';
+            link.href = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext x="50" y="50" font-size="80" text-anchor="middle" dy=".3em" fill="%23ff8c00"%3E💬%3C/text%3E%3C/svg%3E';
         }
     }
-
-    let unreadCount = 0;
     function incrementUnreadCount() {
         unreadCount++;
         setFaviconBadge(Math.min(unreadCount, 99));
@@ -549,52 +637,24 @@
         stopTitleFlash();
     }
 
-    // 检查新消息并触发通知
-    let lastSeenTimestamps = {};
-    function checkNewMessages(messages, type, identifier, chatName) {
-        if (!messages.length) return;
-        const latestMsg = messages[messages.length-1];
-        const lastSeen = lastSeenTimestamps[`${type}_${identifier}`] || 0;
-        let hasNew = false;
-        for (let msg of messages) {
-            if (msg.created_at > lastSeen && msg.sender_id !== currentUser?.user_id && !lastNotifiedMsgId.has(msg.message_id)) {
-                hasNew = true;
-                lastNotifiedMsgId.add(msg.message_id);
-                if (type === 'room') {
-                    showSystemNotification(`#${chatName}`, `${msg.username}: ${msg.content.substring(0, 80)}`, null);
-                } else {
-                    showSystemNotification(`💬 来自 ${msg.username}`, msg.content.substring(0, 80), null);
-                }
-                playNotificationSound();
-                incrementUnreadCount();
-            }
-        }
-        if (latestMsg.created_at > lastSeen) {
-            lastSeenTimestamps[`${type}_${identifier}`] = latestMsg.created_at;
-        }
-    }
-
     // Helper
     function showError(div, msg) { div.innerText = msg; setTimeout(() => div.innerText = '', 3000); }
     function formatTime(ts) { return new Date(ts * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
-    function escapeHtml(str) { 
-        if(!str) return '';
-        return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); 
-    }
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
 
     async function apiCall(path, method, body = null, needAuth = true, adminPass = null) {
         const headers = { 'Content-Type': 'application/json' };
         if (needAuth && currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
         if (adminPass) headers['X-Admin-Password'] = adminPass;
         const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-        if (res.status === 401 && needAuth) { logout(); throw new Error('登录过期'); }
+        if (res.status === 401 && needAuth) { logout(); throw new Error(t('needLogin')); }
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
         return data;
     }
 
     async function adminApiCall(path, method, body = null) {
-        const pass = prompt("请输入管理员密码:");
+        const pass = prompt(t('needAdminPwd'));
         if(!pass) throw new Error('需要管理员密码');
         const headers = { 'Content-Type': 'application/json', 'X-Admin-Password': pass };
         if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
@@ -630,8 +690,15 @@
             await apiCall('/api/admin/check', 'GET');
             isAdmin = true;
         } catch(e) { isAdmin = false; }
-        // 请求通知权限
         requestNotificationPermission();
+        // 初始化各会话的最后消息时间（避免历史消息误报）
+        try {
+            const rooms = await apiCall('/api/list-rooms', 'GET');
+            for (const r of rooms.filter(r => r.joined)) {
+                const msgs = await apiCall(`/api/messages?room_id=${r.room_id}&limit=1`, 'GET');
+                if (msgs.length) lastSeenTimestamps[`room_${r.room_id}`] = msgs[0].created_at;
+            }
+        } catch(e) {}
     }
 
     async function loadRooms() {
@@ -639,9 +706,7 @@
         roomListDiv.innerHTML = rooms.map(r => `
             <div class="room-item online-user" data-room-id="${r.room_id}" data-room-name="${escapeHtml(r.room_name)}" data-joined="${r.joined}">
                 <div><span># ${escapeHtml(r.room_name)}</span><span style="font-size:0.7rem; margin-left:8px;">👥 ${r.member_count}</span></div>
-                <div>
-                    ${r.joined ? '<span style="color:#6f9eff;">✓ 已加入</span>' : '<button class="joinRoomBtn" data-id="'+r.room_id+'">加入</button>'}
-                </div>
+                <div>${r.joined ? '<span style="color:#ffaa33;">✓ 已加入</span>' : '<button class="joinRoomBtn" data-id="'+r.room_id+'">'+t('joinRoomFirst')+'</button>'}</div>
             </div>
         `).join('');
         document.querySelectorAll('.joinRoomBtn').forEach(btn => {
@@ -660,7 +725,7 @@
                 if (el.dataset.joined === '1') {
                     openChat({ type: 'room', id: parseInt(roomId), name: name });
                 } else {
-                    alert('请先加入房间');
+                    alert(t('joinRoomFirst'));
                 }
             });
         });
@@ -695,7 +760,7 @@
         resetUnreadCount();
         if (chat.type === 'room') {
             chatTitleSpan.innerText = `# ${chat.name}`;
-            chatTypeBadge.innerText = '群聊';
+            chatTypeBadge.innerText = t('groupChatBadge');
             try {
                 const roomInfo = await apiCall(`/api/room-info?room_id=${chat.id}`, 'GET');
                 if(roomInfo.announcement) {
@@ -722,18 +787,81 @@
         messageInput.focus();
     }
 
+    // 搜索高亮相关
+    let currentSearchResults = [];
+    let currentSearchIndex = 0;
+    function clearSearchHighlights() {
+        document.querySelectorAll('.search-highlight').forEach(el => {
+            const parent = el.parentNode;
+            parent.replaceChild(document.createTextNode(el.textContent), el);
+            parent.normalize();
+        });
+        currentSearchResults = [];
+    }
+    function highlightSearch(term) {
+        if (!term) return;
+        const container = document.getElementById('messageArea');
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+            acceptNode: (node) => {
+                if (node.parentElement && node.parentElement.classList && node.parentElement.classList.contains('search-highlight')) return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        const textNodes = [];
+        while(walker.nextNode()) textNodes.push(walker.currentNode);
+        const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        textNodes.forEach(node => {
+            const original = node.textContent;
+            if (regex.test(original)) {
+                const span = document.createElement('span');
+                span.innerHTML = original.replace(regex, '<span class="search-highlight">$1</span>');
+                node.parentNode.replaceChild(span, node);
+                span.querySelectorAll('.search-highlight').forEach(hl => currentSearchResults.push(hl));
+            }
+        });
+        if (currentSearchResults.length) {
+            currentSearchIndex = 0;
+            currentSearchResults[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            currentSearchResults[0].style.backgroundColor = '#ffaa33';
+        }
+    }
+    function navigateSearch(direction) {
+        if (!currentSearchResults.length) return;
+        currentSearchResults[currentSearchIndex].style.backgroundColor = '#ff8c00';
+        if (direction === 'next') currentSearchIndex = (currentSearchIndex + 1) % currentSearchResults.length;
+        else currentSearchIndex = (currentSearchIndex - 1 + currentSearchResults.length) % currentSearchResults.length;
+        currentSearchResults[currentSearchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        currentSearchResults[currentSearchIndex].style.backgroundColor = '#ffaa33';
+    }
+
     async function loadMessages(id, type) {
         let msgs = [];
         if (type === 'room') {
             msgs = await apiCall(`/api/messages?room_id=${id}&limit=50`, 'GET');
             await apiCall('/api/mark-read', 'POST', { room_id: id, message_ids: msgs.map(m=>m.message_id) }).catch(e=>console.warn);
-            const chatName = currentChat?.name || '';
-            checkNewMessages(msgs, 'room', id, chatName);
+            const lastSeen = lastSeenTimestamps[`room_${id}`] || 0;
+            for (let msg of msgs) {
+                if (msg.created_at > lastSeen && msg.sender_id !== currentUser?.user_id && !lastNotifiedMsgId.has(msg.message_id)) {
+                    lastNotifiedMsgId.add(msg.message_id);
+                    showSystemNotification(`#${currentChat?.name}`, `${msg.username}: ${msg.content.substring(0,80)}`);
+                    playNotificationSound();
+                    incrementUnreadCount();
+                }
+            }
+            if (msgs.length) lastSeenTimestamps[`room_${id}`] = msgs[msgs.length-1].created_at;
         } else {
             msgs = await apiCall(`/api/private-messages?conversation_id=${id}&limit=50`, 'GET');
             await apiCall('/api/mark-read-private', 'POST', { conversation_id: id, message_ids: msgs.map(m=>m.message_id) }).catch(e=>console.warn);
-            const targetName = currentChat?.targetName || '';
-            checkNewMessages(msgs, 'private', id, targetName);
+            const lastSeen = lastSeenTimestamps[`private_${id}`] || 0;
+            for (let msg of msgs) {
+                if (msg.created_at > lastSeen && msg.sender_id !== currentUser?.user_id && !lastNotifiedMsgId.has(msg.message_id)) {
+                    lastNotifiedMsgId.add(msg.message_id);
+                    showSystemNotification(`💬 来自 ${msg.username}`, msg.content.substring(0,80));
+                    playNotificationSound();
+                    incrementUnreadCount();
+                }
+            }
+            if (msgs.length) lastSeenTimestamps[`private_${id}`] = msgs[msgs.length-1].created_at;
         }
         messageArea.innerHTML = msgs.map(m => `
             <div class="message-bubble" data-msg-id="${m.message_id}" data-sender="${m.sender_id}">
@@ -751,20 +879,23 @@
         document.querySelectorAll('.message-bubble').forEach(el => {
             el.addEventListener('click', (e) => {
                 if(e.target.classList.contains('message-user')) return;
-                const msgDiv = el;
-                const senderSpan = msgDiv.querySelector('.message-user');
+                const senderSpan = el.querySelector('.message-user');
                 const sender = senderSpan ? senderSpan.innerText : '用户';
-                const contentDiv = msgDiv.querySelector('div:last-child');
+                const contentDiv = el.querySelector('div:last-child');
                 let text = contentDiv ? contentDiv.innerText : '';
                 if(text.startsWith('↳ 回复')) text = text.split('\n').pop();
                 setQuote(text.substring(0, 100), sender);
             });
         });
         messageArea.scrollTop = messageArea.scrollHeight;
+        // 清除搜索高亮
+        clearSearchHighlights();
+        const searchTerm = document.getElementById('searchInput').value.trim();
+        if (searchTerm) highlightSearch(searchTerm);
     }
 
     async function sendMessage() {
-        if (!currentChat) return alert('请先选择聊天室或私聊');
+        if (!currentChat) return alert(t('noChat'));
         let content = messageInput.value.trim();
         if (!content) return;
         let quoteData = null;
@@ -781,7 +912,7 @@
             messageInput.value = '';
             if (currentChat.type === 'room') await loadMessages(currentChat.id, 'room');
             else await loadMessages(currentChat.id, 'private');
-        } catch(e) { alert('发送失败'); }
+        } catch(e) { alert(t('sendFailed')); }
     }
 
     function startPolling() {
@@ -796,30 +927,116 @@
         onlinePolling = setInterval(() => loadOnlineUsers(), 5000);
     }
 
+    // 表情选择器
+    const emojis = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','☠️','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','👍','👎','👊','✊','🤛','🤜','👌','✌️','🤞','👏','🙌','👐','🤲','🤝','🙏','💪','🦾','🦵','🦶','👀','🧠','👅','👄','💋','💍','💎','🔥','✨','⭐','🌟','💫','⚡','☀️','⛅','☁️','❄️','💧','🌊','🍎','🍕','🍔','🍟','🌮','🍣','🥩','🍩','🍪','☕','🍺','⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🎱','🪀','🎮','🎲','♠️','♥️','♦️','♣️','🃏','🀄️','🎴','💌','💐','🌸','🌹','🌺','🌻','🌼','🌷','⚘','🌲','🌳','🌴','🌵','🌾','🌿','🍀','🍁','🍂','🍃','🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🥝','🍅','🥥','🥑','🍆','🥔','🥕','🌽','🌶️','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🌰','🍞','🥐','🥖','🥨','🥯','🥞','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🥙','🧆','🥚','🍳','🥘','🍲','🥣','🥗','🍿','🧈','🧂','🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🦀','🦞','🦐','🦑','🐙','🐟','🐠','🐡','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🐎','🐫','🐪','🦒','🦓','🐘','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐖','🐏','🐑','🐐','🐕','🐩','🐈','🐓','🦃','🕊️','🐇','🐁','🐀','🐿️','🦔','🐉','🐲','🌍','🌎','🌏','🌕','🌖','🌗','🌘','🌑','🌒','🌓','🌔','🌙','🌚','🌛','🌜','☄️','🪐','💫','⭐','🌟','⚡','🔥','💧','💨','🌊','⛄','☃️','🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏧','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌','🕍','⛩️','🕋','⛲','⛱️','🏖️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏘️','🏚️','🏠'];
+    function showEmojiPicker() {
+        const picker = document.getElementById('emojiPicker');
+        if (picker.style.display === 'flex') {
+            picker.style.display = 'none';
+            return;
+        }
+        picker.innerHTML = '';
+        emojis.slice(0, 80).forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.textContent = emoji;
+            btn.className = 'emoji-btn';
+            btn.onclick = () => {
+                messageInput.value += emoji;
+                picker.style.display = 'none';
+                messageInput.focus();
+            };
+            picker.appendChild(btn);
+        });
+        picker.style.display = 'flex';
+        document.addEventListener('click', function hidePicker(e) {
+            if (!picker.contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+                picker.style.display = 'none';
+                document.removeEventListener('click', hidePicker);
+            }
+        });
+    }
+    document.getElementById('emojiBtn').onclick = showEmojiPicker;
+
+    // 搜索事件绑定
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        clearSearchHighlights();
+        const term = e.target.value.trim();
+        if (term) highlightSearch(term);
+    });
+    document.getElementById('searchPrevBtn').onclick = () => navigateSearch('prev');
+    document.getElementById('searchNextBtn').onclick = () => navigateSearch('next');
+    document.getElementById('clearSearchBtn').onclick = () => {
+        document.getElementById('searchInput').value = '';
+        clearSearchHighlights();
+    };
+
+    // 导航、设置等UI
+    const viewAuth = document.getElementById('view-auth');
+    const viewApp = document.getElementById('view-app');
+    const viewAdmin = document.getElementById('view-admin');
+    const navLinks = document.getElementById('navLinks');
+    const loginFormDiv = document.getElementById('loginForm');
+    const registerFormDiv = document.getElementById('registerForm');
+    const showLoginBtn = document.getElementById('showLoginBtn');
+    const showRegisterBtn = document.getElementById('showRegisterBtn');
+    const doLoginBtn = document.getElementById('doLoginBtn');
+    const doRegisterBtn = document.getElementById('doRegisterBtn');
+    const loginError = document.getElementById('loginError');
+    const regError = document.getElementById('regError');
+    const createRoomBtn = document.getElementById('createRoomBtn');
+    const roomListDiv = document.getElementById('roomList');
+    const onlineUsersDiv = document.getElementById('onlineUsersList');
+    const chatTitleSpan = document.getElementById('chatTitle');
+    const chatTypeBadge = document.getElementById('chatTypeBadge');
+    const closeChatBtn = document.getElementById('closeChatBtn');
+    const messageArea = document.getElementById('messageArea');
+    const messageInput = document.getElementById('messageInput');
+    const sendMsgBtn = document.getElementById('sendMsgBtn');
+    const announcementDiv = document.getElementById('announcementArea');
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
+    const closeAdminBtn = document.getElementById('closeAdminBtn');
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    const adminPassword = document.getElementById('adminPassword');
+    const adminAuthDiv = document.getElementById('adminAuthDiv');
+    const adminContent = document.getElementById('adminContent');
+    const adminAuthError = document.getElementById('adminAuthError');
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsMenuBtn = document.getElementById('settingsMenuBtn');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const soundToggle = document.getElementById('soundToggle');
+
+    soundToggle.checked = soundEnabled;
+    soundToggle.addEventListener('change', () => {
+        soundEnabled = soundToggle.checked;
+        localStorage.setItem('soundEnabled', soundEnabled);
+    });
+
     function renderNavUnlogged() {
         navLinks.innerHTML = `<span style="color:#aaa;">未登录</span>`;
     }
     function renderNavLogged() {
         navLinks.innerHTML = `
             <span style="margin-right:auto;">👤 ${currentUser?.username} ${isAdmin ? '<span class="admin-badge">admin</span>' : ''}</span>
-            <button id="settingsBtn" class="nav-btn">⚙️ 设置</button>
-            <button id="logoutNavBtn" class="nav-btn">🚪 退出</button>
+            <button id="homeBtn" class="nav-btn" data-i18n="homeBtn">🏠 首页</button>
+            <button id="settingsBtn" class="nav-btn" data-i18n="settingsBtn">⚙️ 设置</button>
+            <button id="logoutNavBtn" class="nav-btn" data-i18n="logoutBtn">🚪 退出</button>
         `;
+        document.getElementById('homeBtn')?.addEventListener('click', () => window.location.href = 'https://kkk64813.github.io/visual-transmission/index.html');
         document.getElementById('settingsBtn')?.addEventListener('click', showSettings);
         document.getElementById('logoutNavBtn')?.addEventListener('click', logout);
     }
     async function showSettings() {
-        const newPass = prompt('修改密码\n请输入新密码（6-64字符）');
+        const newPass = prompt(t('changePwdPrompt') || '修改密码\n请输入新密码（6-64字符）');
         if (!newPass) return;
-        const confirmPass = prompt('请再次输入新密码');
+        const confirmPass = prompt(t('confirmPwdPrompt') || '请再次输入新密码');
         if (newPass !== confirmPass) return alert('两次密码不一致');
-        const curPass = prompt('请输入当前密码');
+        const curPass = prompt(t('currentPwdPrompt') || '请输入当前密码');
         if (!curPass) return;
         try {
             await apiCall('/api/change-password', 'POST', { current_password: curPass, new_password: newPass, confirm_new_password: confirmPass });
-            alert('密码修改成功，请重新登录');
+            alert(t('passwordChanged'));
             logout();
-        } catch(e) { alert('修改失败：'+e.message); }
+        } catch(e) { alert(t('changePwdFail')+e.message); }
     }
 
     // 管理员后台
@@ -850,7 +1067,7 @@
                 loadAdminUsers();
                 loadAdminRooms();
             } else {
-                adminAuthError.innerText = '密码错误';
+                adminAuthError.innerText = t('invalidPwd') || '密码错误';
             }
         } catch(e) { adminAuthError.innerText = '验证失败'; }
     };
@@ -861,8 +1078,8 @@
             <div class="flex-between" style="margin-bottom: 8px;">
                 <div>${escapeHtml(u.username)} (${u.user_id}) ${u.is_admin ? '[ADMIN]' : ''}</div>
                 <div>
-                    <button class="admin-mute-btn" data-id="${u.user_id}" data-muted="${u.is_muted}">${u.is_muted ? '解除禁言' : '禁言'}</button>
-                    <button class="admin-deluser-btn" data-id="${u.user_id}">删除用户</button>
+                    <button class="admin-mute-btn" data-id="${u.user_id}" data-muted="${u.is_muted}">${u.is_muted ? t('unmuteUser') : t('muteUser')}</button>
+                    <button class="admin-deluser-btn" data-id="${u.user_id}">${t('deleteBtn')}</button>
                 </div>
             </div>
         `).join('');
@@ -876,7 +1093,7 @@
         });
         document.querySelectorAll('.admin-deluser-btn').forEach(btn => {
             btn.onclick = async () => {
-                if(confirm('永久删除用户及其所有数据？')) {
+                if(confirm(t('deleteUserConfirm'))) {
                     await adminApiCall('/api/admin/delete-user', 'POST', { user_id: btn.dataset.id });
                     loadAdminUsers();
                 }
@@ -889,12 +1106,12 @@
         container.innerHTML = rooms.map(r => `
             <div class="flex-between" style="margin-bottom: 8px;">
                 <div>${escapeHtml(r.room_name)} (ID:${r.room_id}) 创建者:${r.creator_id}</div>
-                <button class="admin-delroom-btn" data-id="${r.room_id}">删除房间</button>
+                <button class="admin-delroom-btn" data-id="${r.room_id}">${t('deleteBtn')}</button>
             </div>
         `).join('');
         document.querySelectorAll('.admin-delroom-btn').forEach(btn => {
             btn.onclick = async () => {
-                if(confirm('删除房间会清空所有消息和成员')) {
+                if(confirm(t('deleteRoomConfirm'))) {
                     await adminApiCall('/api/admin/delete-room', 'POST', { room_id: btn.dataset.id });
                     loadAdminRooms();
                 }
@@ -905,19 +1122,19 @@
         const days = parseInt(document.getElementById('cleanDays').value);
         if(isNaN(days)) return;
         await adminApiCall('/api/admin/clean-messages', 'POST', { days });
-        alert('清理完成');
+        alert(t('cleanDone'));
     };
     document.getElementById('deleteSingleMsgBtn').onclick = async () => {
         const msgId = document.getElementById('deleteMsgId').value;
         if(!msgId) return;
         await adminApiCall('/api/admin/delete-message', 'POST', { message_id: msgId });
-        alert('已删除');
+        alert(t('msgDeleted'));
     };
     document.getElementById('grantAdminBtn').onclick = async () => {
         const targetId = document.getElementById('grantUserId').value;
         if(!targetId) return;
         await adminApiCall('/api/admin/grant-admin', 'POST', { target_user_id: targetId });
-        alert('已授予管理员权限');
+        alert(t('granted'));
         loadAdminUsers();
     };
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
@@ -933,18 +1150,10 @@
         };
     });
 
-    // 设置浮窗
-    settingsMenuBtn.onclick = () => {
-        settingsModal.style.display = 'flex';
-    };
-    closeSettingsBtn.onclick = () => {
-        settingsModal.style.display = 'none';
-    };
-    window.onclick = (e) => {
-        if (e.target === settingsModal) settingsModal.style.display = 'none';
-    };
+    settingsMenuBtn.onclick = () => { settingsModal.style.display = 'flex'; };
+    closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
+    window.onclick = (e) => { if (e.target === settingsModal) settingsModal.style.display = 'none'; };
 
-    // 登录注册事件
     showLoginBtn.onclick = () => { loginFormDiv.style.display = 'block'; registerFormDiv.style.display = 'none'; showLoginBtn.classList.add('active'); showRegisterBtn.classList.remove('active'); };
     showRegisterBtn.onclick = () => { loginFormDiv.style.display = 'none'; registerFormDiv.style.display = 'block'; showRegisterBtn.classList.add('active'); showLoginBtn.classList.remove('active'); };
     doLoginBtn.onclick = async () => {
@@ -974,7 +1183,7 @@
             await loadProfile();
         } catch(e) { showError(regError, e.message); }
     };
-    closeChatBtn.onclick = () => { currentChat = null; chatTitleSpan.innerText = '💬 未选择聊天'; messageArea.innerHTML = '<div style="text-align:center; padding:2rem;">选择左侧房间或用户开始聊天</div>'; announcementDiv.style.display = 'none'; };
+    closeChatBtn.onclick = () => { currentChat = null; chatTitleSpan.innerText = '💬 未选择聊天'; messageArea.innerHTML = `<div style="text-align:center; padding:2rem;">${t('noChat')}</div>`; announcementDiv.style.display = 'none'; };
     sendMsgBtn.onclick = sendMessage;
     messageInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
     createRoomBtn.onclick = async () => {
