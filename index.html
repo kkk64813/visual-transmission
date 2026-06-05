@@ -143,14 +143,13 @@
         } catch(e) { return 'dev_'+Math.random().toString(36).substring(2,10); }
     }
 
-    // 从后端公开接口获取模块配置（多设备同步）
     async function fetchPublicModules() {
         try {
             const res = await fetch(`${API_BASE}/api/public/modules`);
             const data = await res.json();
             if (data.success && data.modules && Array.isArray(data.modules)) {
                 state.customModules = data.modules;
-                saveCustomModules(false); // 保存到本地，但不触发后端同步（避免循环）
+                saveCustomModules(false);
                 render();
                 addTerminalLog("Modules synced from server", true);
                 return true;
@@ -164,12 +163,15 @@
 
     async function syncModulesToBackend() {
         if (!state.adminLoggedIn) return;
+        const token = localStorage.getItem('mg_admin_token');
         try {
             const res = await fetch(`${API_BASE}/api/admin/update-modules`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ modules: state.customModules }),
-                credentials: 'include'
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({ modules: state.customModules })
             });
             if (!res.ok) console.warn("Failed to sync modules to backend");
         } catch(e) { console.error(e); }
@@ -281,42 +283,44 @@
 
     function sendSupport(data) { let msgs = JSON.parse(localStorage.getItem('mg_support_messages') || '[]'); msgs.push({ ...data, time: new Date().toISOString() }); localStorage.setItem('mg_support_messages', JSON.stringify(msgs)); showToast("Message sent"); addTerminalLog(`Support from ${data.email}`, true); }
 
-async function openAdminLogin() {
-    let pwd = prompt(t('adminLogin') + " Password:");
-    if (!pwd) return;
-    try {
-        const res = await fetch(`${API_BASE}/api/admin-login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: 'admin', password: pwd })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-            // 保存 token 到 localStorage
-            localStorage.setItem('mg_admin_token', data.token);
-            state.adminLoggedIn = true;
-            state.adminMode = true;
-            await fetchPublicModules();
-            render();
-            addTerminalLog("Admin access granted", true);
-            showToast("Admin mode enabled");
-        } else {
-            showToast(data.message || "Invalid admin credentials", true);
+    async function openAdminLogin() {
+        let pwd = prompt(t('adminLogin') + " Password:");
+        if (!pwd) return;
+        try {
+            const res = await fetch(`${API_BASE}/api/admin-login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'admin', password: pwd })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                localStorage.setItem('mg_admin_token', data.token);
+                state.adminLoggedIn = true;
+                state.adminMode = true;
+                await fetchPublicModules();
+                render();
+                addTerminalLog("Admin access granted", true);
+                showToast("Admin mode enabled");
+            } else {
+                showToast(data.message || "Invalid admin credentials", true);
+            }
+        } catch(err) {
+            console.error(err);
+            showToast("Admin login error: " + err.message, true);
         }
-    } catch(err) {
-        console.error(err);
-        showToast("Admin login error: " + err.message, true);
     }
-}
 
     async function generateActivationCode(duration, modulesArray) {
         const modulesStr = modulesArray.join(',');
+        const token = localStorage.getItem('mg_admin_token');
         try {
             const res = await fetch(`${API_BASE}/api/admin/generate-code`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ duration, modules: modulesStr }),
-                credentials: 'include'
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({ duration, modules: modulesStr })
             });
             const data = await res.json();
             if (res.ok && data.success) {
@@ -337,8 +341,11 @@ async function openAdminLogin() {
     }
 
     async function fetchActivationCodes() {
+        const token = localStorage.getItem('mg_admin_token');
         try {
-            const res = await fetch(`${API_BASE}/api/admin/list-codes`, { credentials: 'include' });
+            const res = await fetch(`${API_BASE}/api/admin/list-codes`, {
+                headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+            });
             const data = await res.json();
             if (res.ok && data.success) return data.codes;
             else return [];
@@ -346,12 +353,15 @@ async function openAdminLogin() {
     }
 
     async function deleteActivationCode(code) {
+        const token = localStorage.getItem('mg_admin_token');
         try {
             const res = await fetch(`${API_BASE}/api/admin/delete-code`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code }),
-                credentials: 'include'
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({ code })
             });
             const data = await res.json();
             if (res.ok && data.success) {
@@ -368,7 +378,6 @@ async function openAdminLogin() {
         navigator.clipboard.writeText(text).then(() => showToast("Copied!", false)).catch(() => showToast("Copy failed", true));
     }
 
-    // 渲染函数
     function render() {
         const root = document.getElementById('appRoot');
         if(!root) return;
@@ -394,7 +403,6 @@ async function openAdminLogin() {
         const isUrgent = state.loggedIn && remainSec < 300;
         let modulesDisplay = [...state.customModules].filter(m=>m.enabled).sort((a,b)=>(a.order||0)-(b.order||0));
         const modulesHtml = modulesDisplay.map(m => {
-            // 修复：将模块id转为大写，与后端返回的大写模块名匹配
             const isUnlocked = !state.locked && state.allowedModules.includes(m.id.toUpperCase());
             return `<div class="module-card ${state.locked ? '' : (isUnlocked ? 'unlocked' : '')}" data-id="${m.id}" data-url="${m.url||''}" data-custom="${m.isCustom}"><i class="fas ${m.icon} module-icon"></i><strong>${m.name}</strong>${state.locked || !isUnlocked ? `<div class="lock-badge"><i class="fas fa-lock"></i></div>` : ''}</div>`;
         }).join('');
@@ -499,11 +507,14 @@ async function openAdminLogin() {
                 if(npwd) {
                     try {
                         const old = prompt("Enter current admin password:");
+                        const token = localStorage.getItem('mg_admin_token');
                         const res = await fetch(`${API_BASE}/api/admin/change-password`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ old_password: old, new_password: npwd }),
-                            credentials: 'include'
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': token ? `Bearer ${token}` : ''
+                            },
+                            body: JSON.stringify({ old_password: old, new_password: npwd })
                         });
                         if(res.ok) showToast("Password updated");
                         else showToast("Password change failed", true);
@@ -588,7 +599,12 @@ async function openAdminLogin() {
             setActiveTab(currentAdminTab);
         }
         document.getElementById('exitAdminMode')?.addEventListener('click',()=>{ state.adminMode=false; render(); });
-        document.getElementById('adminLogout')?.addEventListener('click',()=>{ state.adminLoggedIn=false; state.adminMode=false; render(); });
+        document.getElementById('adminLogout')?.addEventListener('click',()=>{ 
+            localStorage.removeItem('mg_admin_token');
+            state.adminLoggedIn=false; 
+            state.adminMode=false; 
+            render(); 
+        });
     }
 
     function initParticles() {
@@ -607,12 +623,8 @@ async function openAdminLogin() {
 
     (async () => {
         state.deviceId = await getDeviceFingerprint();
-        // 优先从后端公开接口获取模块配置，实现多设备同步
         const synced = await fetchPublicModules();
-        if (!synced) {
-            // 如果后端没有配置，则使用本地存储或默认配置
-            loadCustomModules();
-        }
+        if (!synced) loadCustomModules();
         await refreshSession();
         render();
         if(refreshTimer) clearInterval(refreshTimer);
