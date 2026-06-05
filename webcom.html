@@ -1,36 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<script>
-(async () => {
-  const API_BASE = 'https://mg-secret-vault.mgjack13.workers.dev';
-  try {
-    const resp = await fetch(`${API_BASE}/api/check-module?module=SERVERLESS`, {
-      credentials: 'include'
-    });
-    const data = await resp.json();
-    if (!data.allowed) {
-      alert('Please activate your license.');
-      location.href = 'index.html';
-      return;
-    }
-  } catch (err) {
-    alert('License verification failed.');
-    location.href = 'index.html';
-  }
-})();
-</script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>WebCom Lite - 极简聊天室</title>
+    <title>WebCom Lite · 极简聊天室</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
             background: radial-gradient(circle at 20% 30%, #0a0f1e, #03050b);
@@ -38,8 +17,6 @@
             color: #eef5ff;
             backdrop-filter: blur(2px);
         }
-
-        /* 玻璃拟态容器 */
         .glass {
             background: rgba(15, 25, 45, 0.55);
             backdrop-filter: blur(12px);
@@ -47,7 +24,6 @@
             border: 1px solid rgba(90, 150, 220, 0.25);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
-
         .app-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -56,23 +32,12 @@
             display: flex;
             flex-direction: column;
         }
-
-        /* 视图切换 */
-        .view {
-            display: none;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .view.active {
-            display: block;
-        }
-
+        .view { display: none; animation: fadeIn 0.2s ease; }
+        .view.active { display: block; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px);}
             to { opacity: 1; transform: translateY(0);}
         }
-
-        /* 头部导航 */
         .nav-bar {
             display: flex;
             justify-content: space-between;
@@ -84,7 +49,6 @@
             border-radius: 3rem;
             border: 1px solid rgba(80, 140, 210, 0.3);
         }
-
         .logo {
             font-weight: 700;
             font-size: 1.5rem;
@@ -93,13 +57,11 @@
             background-clip: text;
             color: transparent;
         }
-
         .nav-links {
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
         }
-
         .nav-btn {
             background: none;
             border: none;
@@ -110,18 +72,11 @@
             cursor: pointer;
             transition: 0.2s;
         }
-
-        .nav-btn.active {
+        .nav-btn.active, .nav-btn:hover {
             background: rgba(80, 140, 255, 0.3);
             color: white;
             box-shadow: 0 0 8px rgba(80, 140, 255, 0.3);
         }
-
-        .nav-btn:hover {
-            background: rgba(80, 140, 255, 0.2);
-        }
-
-        /* 卡片样式 */
         .card {
             background: rgba(20, 32, 55, 0.6);
             backdrop-filter: blur(12px);
@@ -129,7 +84,6 @@
             padding: 1.5rem;
             border: 1px solid rgba(100, 160, 240, 0.2);
         }
-
         input, textarea, button {
             background: rgba(10, 18, 30, 0.8);
             border: 1px solid #2d3e5f;
@@ -140,24 +94,20 @@
             outline: none;
             transition: 0.2s;
         }
-
         input:focus, textarea:focus {
             border-color: #5f9eff;
             box-shadow: 0 0 0 2px rgba(95, 158, 255, 0.2);
         }
-
         button {
             background: linear-gradient(135deg, #2b4b9e, #1f3a7a);
             border: none;
             font-weight: 600;
             cursor: pointer;
         }
-
         button:hover {
             background: linear-gradient(135deg, #3a60b5, #2a4890);
             transform: scale(0.98);
         }
-
         .message-list {
             display: flex;
             flex-direction: column;
@@ -166,26 +116,29 @@
             overflow-y: auto;
             padding-right: 0.5rem;
         }
-
         .message-bubble {
             background: rgba(30, 45, 70, 0.7);
             border-radius: 1.2rem;
             padding: 0.6rem 1rem;
             border-left: 4px solid #5f9eff;
+            position: relative;
         }
-
         .message-user {
             font-weight: bold;
             color: #9ac4ff;
             font-size: 0.8rem;
+            cursor: pointer;
         }
-
         .message-time {
             font-size: 0.7rem;
             color: #8aa0c0;
             margin-left: 0.8rem;
         }
-
+        .read-status {
+            font-size: 0.65rem;
+            color: #6f8fc0;
+            margin-left: 0.5rem;
+        }
         .online-user {
             display: flex;
             align-items: center;
@@ -195,7 +148,6 @@
             background: rgba(40, 60, 90, 0.4);
             margin-bottom: 0.5rem;
         }
-
         .status-dot {
             width: 8px;
             height: 8px;
@@ -203,40 +155,40 @@
             background: #4caf50;
             box-shadow: 0 0 4px #4caf50;
         }
-
-        .status-dot.offline {
-            background: #6c757d;
-            box-shadow: none;
+        .status-dot.offline { background: #6c757d; box-shadow: none; }
+        .room-item, .user-item { cursor: pointer; transition: 0.1s; }
+        .room-item:hover, .user-item:hover { background: rgba(80, 140, 255, 0.2); }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .error-msg { color: #ff9f8f; font-size: 0.8rem; margin-top: 0.5rem; }
+        .quote-block {
+            background: rgba(255,255,200,0.1);
+            border-left: 3px solid #ffb347;
+            padding: 4px 8px;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            border-radius: 8px;
         }
-
-        /* 响应式 */
+        .admin-badge {
+            background: #ff9800;
+            color: #1a1e2a;
+            font-size: 0.7rem;
+            border-radius: 20px;
+            padding: 2px 8px;
+            margin-left: 8px;
+        }
+        .announcement {
+            background: #1e2a3a;
+            border-radius: 16px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            border-left: 3px solid #ffc107;
+        }
         @media (max-width: 768px) {
             .nav-bar { flex-direction: column; gap: 0.8rem; }
-            .glass { border-radius: 1.2rem; }
+            .grid-2col { grid-template-columns: 1fr; }
             .message-list { max-height: 45vh; }
-        }
-
-        .room-item, .user-item {
-            cursor: pointer;
-            transition: 0.1s;
-        }
-        .room-item:hover, .user-item:hover {
-            background: rgba(80, 140, 255, 0.2);
-        }
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .grid-2col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-        .error-msg {
-            color: #ff9f8f;
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
         }
     </style>
 </head>
@@ -244,9 +196,7 @@
 <div class="app-container">
     <div class="nav-bar">
         <div class="logo">✦ WebCom Lite</div>
-        <div class="nav-links" id="navLinks">
-            <!-- 动态显示登录/注册或聊天室导航 -->
-        </div>
+        <div class="nav-links" id="navLinks"></div>
     </div>
 
     <!-- 未登录视图 -->
@@ -273,29 +223,28 @@
         </div>
     </div>
 
-    <!-- 主应用视图（登录后显示） -->
+    <!-- 主应用视图 -->
     <div id="view-app" class="view">
         <div class="grid-2col" style="gap: 1.2rem;">
-            <!-- 左侧：房间列表 + 在线用户 -->
+            <!-- 左侧：房间列表 + 在线用户 + 管理员入口 -->
             <div>
                 <div class="card" style="margin-bottom: 1rem;">
                     <div class="flex-between">
                         <h3>📢 聊天室大厅</h3>
-                        <button id="createRoomBtn" style="padding: 0.3rem 1rem;">+ 创建</button>
+                        <div>
+                            <button id="adminPanelBtn" style="padding: 0.3rem 1rem; margin-right: 0.5rem;">⚙️ 管理</button>
+                            <button id="createRoomBtn" style="padding: 0.3rem 1rem;">+ 创建</button>
+                        </div>
                     </div>
-                    <div id="roomList" style="margin-top: 1rem; max-height: 30vh; overflow-y: auto;">
-                        <!-- 动态房间列表 -->
-                    </div>
+                    <div id="roomList" style="margin-top: 1rem; max-height: 30vh; overflow-y: auto;"></div>
                 </div>
                 <div class="card">
                     <h3>👥 在线用户</h3>
-                    <div id="onlineUsersList" style="margin-top: 0.8rem; max-height: 28vh; overflow-y: auto;">
-                        <!-- 动态用户列表 -->
-                    </div>
+                    <div id="onlineUsersList" style="margin-top: 0.8rem; max-height: 28vh; overflow-y: auto;"></div>
                 </div>
             </div>
 
-            <!-- 右侧：聊天区域 + 私聊/群聊切换 -->
+            <!-- 右侧聊天区域 -->
             <div class="card" style="display: flex; flex-direction: column; height: 70vh;">
                 <div class="flex-between">
                     <div>
@@ -304,12 +253,59 @@
                     </div>
                     <button id="closeChatBtn" style="background: none; border:1px solid #4f6f9f;">✕ 关闭</button>
                 </div>
-                <div id="messageArea" class="message-list" style="flex:1; margin: 1rem 0;">
-                    <!-- 消息列表 -->
-                </div>
+                <div id="announcementArea" class="announcement" style="display: none;"></div>
+                <div id="messageArea" class="message-list" style="flex:1; margin: 1rem 0;"></div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <input type="text" id="messageInput" placeholder="输入消息..." maxlength="2000" style="flex:1;">
+                    <input type="text" id="messageInput" placeholder="输入消息... (回复: 点击消息)" maxlength="2000" style="flex:1;">
                     <button id="sendMsgBtn">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理员后台视图（弹窗风格，实际用卡片覆盖） -->
+    <div id="view-admin" class="view" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow: auto; padding: 2rem;">
+        <div class="card" style="max-width: 900px; margin: 2rem auto; background: rgba(10,20,35,0.95);">
+            <div class="flex-between">
+                <h2>🔧 管理后台</h2>
+                <button id="closeAdminBtn" style="background: none; border:1px solid red;">关闭</button>
+            </div>
+            <div id="adminAuthDiv" style="margin: 1rem 0;">
+                <input type="password" id="adminPassword" placeholder="管理员密码" style="width: 200px;">
+                <button id="adminLoginBtn">验证</button>
+                <div id="adminAuthError" class="error-msg"></div>
+            </div>
+            <div id="adminContent" style="display: none;">
+                <div style="display: flex; gap: 1rem; border-bottom: 1px solid #3a4f6f; margin-bottom: 1rem;">
+                    <button class="admin-tab-btn active" data-tab="users">👥 用户管理</button>
+                    <button class="admin-tab-btn" data-tab="rooms">🏠 房间管理</button>
+                    <button class="admin-tab-btn" data-tab="clean">🗑️ 清理记录</button>
+                    <button class="admin-tab-btn" data-tab="grant">👑 权限下发</button>
+                </div>
+                <div id="adminTabUsers" class="admin-tab active">
+                    <h4>用户列表</h4>
+                    <div id="adminUserList" style="max-height: 50vh; overflow-y: auto;"></div>
+                </div>
+                <div id="adminTabRooms" class="admin-tab" style="display: none;">
+                    <h4>聊天室列表</h4>
+                    <div id="adminRoomList" style="max-height: 50vh; overflow-y: auto;"></div>
+                </div>
+                <div id="adminTabClean" class="admin-tab" style="display: none;">
+                    <h4>清理聊天记录</h4>
+                    <p>清除指定天数前的所有消息（群聊+私聊）</p>
+                    <input type="number" id="cleanDays" placeholder="天数 (如 7)" value="7" style="width: 120px;">
+                    <button id="cleanMessagesBtn">清除</button>
+                    <hr style="margin: 1rem 0;">
+                    <h4>删除单条消息</h4>
+                    <input type="text" id="deleteMsgId" placeholder="消息ID">
+                    <button id="deleteSingleMsgBtn">删除</button>
+                    <div id="cleanResult"></div>
+                </div>
+                <div id="adminTabGrant" class="admin-tab" style="display: none;">
+                    <h4>将管理员权限下发给其他用户</h4>
+                    <input type="text" id="grantUserId" placeholder="用户ID (U开头的7位)">
+                    <button id="grantAdminBtn">授予管理员</button>
+                    <div id="grantResult"></div>
                 </div>
             </div>
         </div>
@@ -318,16 +314,18 @@
 
 <script>
     // ==================== 配置 ====================
-    const API_BASE = 'https://webcom-lite-api.mgjack13.workers.dev';
+    const API_BASE = 'https://webcom-lite-api.mgjack13.workers.dev';  // 请修改为你的 Worker 地址
     let currentToken = localStorage.getItem('webcom_token');
-    let currentUser = null;        // { user_id, username }
-    let currentChat = null;         // { type: 'room', id: room_id, name } 或 { type: 'private', id: conversation_id, targetName, targetId }
+    let currentUser = null;
+    let currentChat = null;      // { type: 'room', id, name, announcement? } 或 { type: 'private', id, targetName, targetId }
     let pollingInterval = null;
     let onlinePolling = null;
+    let isAdmin = false;         // 前端标记，实际每次操作后端验证
 
     // DOM 元素
     const viewAuth = document.getElementById('view-auth');
     const viewApp = document.getElementById('view-app');
+    const viewAdmin = document.getElementById('view-admin');
     const navLinks = document.getElementById('navLinks');
     const loginFormDiv = document.getElementById('loginForm');
     const registerFormDiv = document.getElementById('registerForm');
@@ -346,14 +344,27 @@
     const messageArea = document.getElementById('messageArea');
     const messageInput = document.getElementById('messageInput');
     const sendMsgBtn = document.getElementById('sendMsgBtn');
+    const announcementDiv = document.getElementById('announcementArea');
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
+    const closeAdminBtn = document.getElementById('closeAdminBtn');
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    const adminPassword = document.getElementById('adminPassword');
+    const adminAuthDiv = document.getElementById('adminAuthDiv');
+    const adminContent = document.getElementById('adminContent');
+    const adminAuthError = document.getElementById('adminAuthError');
 
-    // 辅助函数
+    // Helper
     function showError(div, msg) { div.innerText = msg; setTimeout(() => div.innerText = '', 3000); }
     function formatTime(ts) { return new Date(ts * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+    function escapeHtml(str) { 
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); 
+    }
 
-    async function apiCall(path, method, body = null, needAuth = true) {
+    async function apiCall(path, method, body = null, needAuth = true, adminPass = null) {
         const headers = { 'Content-Type': 'application/json' };
         if (needAuth && currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+        if (adminPass) headers['X-Admin-Password'] = adminPass;   // 管理员操作携带密码
         const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
         if (res.status === 401 && needAuth) { logout(); throw new Error('登录过期'); }
         const data = await res.json();
@@ -361,15 +372,28 @@
         return data;
     }
 
+    async function adminApiCall(path, method, body = null) {
+        const pass = prompt("请输入管理员密码:");
+        if(!pass) throw new Error('需要管理员密码');
+        const headers = { 'Content-Type': 'application/json', 'X-Admin-Password': pass };
+        if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+        const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '管理员操作失败');
+        return data;
+    }
+
     function logout() {
         localStorage.removeItem('webcom_token');
         currentToken = null;
         currentUser = null;
+        isAdmin = false;
         if (pollingInterval) clearInterval(pollingInterval);
         if (onlinePolling) clearInterval(onlinePolling);
         currentChat = null;
         viewAuth.classList.add('active');
         viewApp.classList.remove('active');
+        viewAdmin.classList.remove('active');
         renderNavUnlogged();
     }
 
@@ -380,6 +404,11 @@
         loadRooms();
         loadOnlineUsers();
         startPolling();
+        // 检查管理员权限
+        try {
+            await apiCall('/api/admin/check', 'GET');
+            isAdmin = true;
+        } catch(e) { isAdmin = false; }
     }
 
     async function loadRooms() {
@@ -392,7 +421,6 @@
                 </div>
             </div>
         `).join('');
-        // 加入按钮事件
         document.querySelectorAll('.joinRoomBtn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -401,7 +429,6 @@
                 loadRooms();
             });
         });
-        // 点击房间进入聊天
         document.querySelectorAll('.room-item').forEach(el => {
             el.addEventListener('click', (e) => {
                 if (e.target.classList.contains('joinRoomBtn')) return;
@@ -417,39 +444,27 @@
     }
 
     async function loadOnlineUsers() {
-        // 获取所有用户并判断在线状态（last_seen 5分钟内）
-        const searchRes = await apiCall('/api/search-user?q=', 'GET'); // 空搜索会返回有限用户? 改用单独API? 我们通过 search-user?q= 获取全部? worker限制10条，不够好。
-        // 改进：单独拉取所有活跃用户（可另写API，此处简化：我们只展示最近活跃用户，通过list-rooms中的成员？不合适）
-        // 简单方法：获取所有房间成员然后合并。为了简洁，前端直接从rooms中获取成员？但API未提供。快速实现：提供一个额外的 /api/all-users ？
-        // 避免修改 worker，我们使用搜索空字符返回最近10条。稍显不足，但10人以内够用。
-        let users = [];
         try {
-            const all = await apiCall('/api/search-user?q=', 'GET');
-            users = all;
-        } catch(e) {}
-        // 还需要获取当前用户的last_seen判断? 从profile拿不到别人。因此需要在worker中增强。为保持简洁，这里仅展示搜索到的用户+在线模拟。
-        // 更稳妥：每个用户心跳更新last_seen，前端用last_seen判断。但我们没有获取其他用户last_seen的接口。
-        // 因此修改worker增加 /api/online-users 返回所有用户及其last_seen。由于用户要求不拆分文件，但我可以在worker中增加。
-        // 为了避免改动worker，临时用搜索列表+显示离线/在线图标不可靠。我将在前端调用搜索后，假设他们都在线（小范围）。
-        // 为了演示效果，直接展示用户名，状态统一绿点。
-        onlineUsersDiv.innerHTML = users.map(u => `
-            <div class="online-user" data-user-id="${u.user_id}" data-username="${escapeHtml(u.username)}">
-                <div class="status-dot"></div>
-                <span>${escapeHtml(u.username)}</span>
-                <button class="startPrivateChatBtn" data-id="${u.user_id}" data-name="${escapeHtml(u.username)}" style="margin-left:auto; padding:2px 12px;">💬</button>
-            </div>
-        `).join('');
-        document.querySelectorAll('.startPrivateChatBtn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const targetId = btn.dataset.id;
-                const targetName = btn.dataset.name;
-                if (targetId === currentUser?.user_id) return;
-                // 创建会话
-                const conv = await apiCall('/api/create-conversation', 'POST', { target_user_id: targetId });
-                openChat({ type: 'private', id: conv.conversation_id, targetName: targetName, targetId: targetId });
+            const users = await apiCall('/api/online-users', 'GET');
+            onlineUsersDiv.innerHTML = users.map(u => `
+                <div class="online-user" data-user-id="${u.user_id}" data-username="${escapeHtml(u.username)}">
+                    <div class="status-dot"></div>
+                    <span>${escapeHtml(u.username)}</span>
+                    ${u.is_admin ? '<span class="admin-badge">admin</span>' : ''}
+                    <button class="startPrivateChatBtn" data-id="${u.user_id}" data-name="${escapeHtml(u.username)}" style="margin-left:auto; padding:2px 12px;">💬</button>
+                </div>
+            `).join('');
+            document.querySelectorAll('.startPrivateChatBtn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const targetId = btn.dataset.id;
+                    const targetName = btn.dataset.name;
+                    if (targetId === currentUser?.user_id) return;
+                    const conv = await apiCall('/api/create-conversation', 'POST', { target_user_id: targetId });
+                    openChat({ type: 'private', id: conv.conversation_id, targetName: targetName, targetId: targetId });
+                });
             });
-        });
+        } catch(e) { console.warn('在线用户加载失败', e); }
     }
 
     async function openChat(chat) {
@@ -457,41 +472,86 @@
         if (chat.type === 'room') {
             chatTitleSpan.innerText = `# ${chat.name}`;
             chatTypeBadge.innerText = '群聊';
+            // 获取房间公告
+            try {
+                const roomInfo = await apiCall(`/api/room-info?room_id=${chat.id}`, 'GET');
+                if(roomInfo.announcement) {
+                    announcementDiv.style.display = 'block';
+                    announcementDiv.innerHTML = `📢 公告：${escapeHtml(roomInfo.announcement)}`;
+                } else {
+                    announcementDiv.style.display = 'none';
+                }
+            } catch(e) { announcementDiv.style.display = 'none'; }
             await loadMessages(chat.id, 'room');
         } else {
             chatTitleSpan.innerText = `💬 与 ${chat.targetName} 私聊`;
             chatTypeBadge.innerText = '私聊';
+            announcementDiv.style.display = 'none';
             await loadMessages(chat.id, 'private');
         }
-        startPolling(); // 重启轮询
+        startPolling();
+    }
+
+    let currentQuote = null;
+    function setQuote(text, sender) {
+        currentQuote = { text, sender };
+        messageInput.value = `> @${sender}: ${text}\n\n`;
+        messageInput.focus();
     }
 
     async function loadMessages(id, type) {
         let msgs = [];
         if (type === 'room') {
             msgs = await apiCall(`/api/messages?room_id=${id}&limit=50`, 'GET');
+            // 上报已读 (群聊简单标记)
+            await apiCall('/api/mark-read', 'POST', { room_id: id, message_ids: msgs.map(m=>m.message_id) }).catch(e=>console.warn);
         } else {
             msgs = await apiCall(`/api/private-messages?conversation_id=${id}&limit=50`, 'GET');
+            await apiCall('/api/mark-read-private', 'POST', { conversation_id: id, message_ids: msgs.map(m=>m.message_id) }).catch(e=>console.warn);
         }
         messageArea.innerHTML = msgs.map(m => `
-            <div class="message-bubble">
-                <span class="message-user">${escapeHtml(m.username)}</span>
-                <span class="message-time">${formatTime(m.created_at)}</span>
+            <div class="message-bubble" data-msg-id="${m.message_id}" data-sender="${m.sender_id}">
+                <div class="flex-between">
+                    <span class="message-user" data-userid="${m.sender_id}">${escapeHtml(m.username)}</span>
+                    <div>
+                        <span class="message-time">${formatTime(m.created_at)}</span>
+                        ${m.read_count ? `<span class="read-status">✓ 已读 ${m.read_count}</span>` : ''}
+                    </div>
+                </div>
+                ${m.quote ? `<div class="quote-block">↳ 回复 ${escapeHtml(m.quote.sender)}: ${escapeHtml(m.quote.text)}</div>` : ''}
                 <div style="word-break: break-word;">${escapeHtml(m.content)}</div>
             </div>
         `).join('');
+        // 添加引用点击
+        document.querySelectorAll('.message-bubble').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if(e.target.classList.contains('message-user')) return;
+                const msgDiv = el;
+                const senderSpan = msgDiv.querySelector('.message-user');
+                const sender = senderSpan ? senderSpan.innerText : '用户';
+                const contentDiv = msgDiv.querySelector('div:last-child');
+                let text = contentDiv ? contentDiv.innerText : '';
+                if(text.startsWith('↳ 回复')) text = text.split('\n').pop();
+                setQuote(text.substring(0, 100), sender);
+            });
+        });
         messageArea.scrollTop = messageArea.scrollHeight;
     }
 
     async function sendMessage() {
         if (!currentChat) return alert('请先选择聊天室或私聊');
-        const content = messageInput.value.trim();
+        let content = messageInput.value.trim();
         if (!content) return;
+        let quoteData = null;
+        if (currentQuote) {
+            quoteData = { text: currentQuote.text, sender: currentQuote.sender };
+            currentQuote = null;
+        }
         try {
             if (currentChat.type === 'room') {
-                await apiCall('/api/send-message', 'POST', { room_id: currentChat.id, content });
+                await apiCall('/api/send-message', 'POST', { room_id: currentChat.id, content, quote: quoteData });
             } else {
-                await apiCall('/api/send-private-message', 'POST', { conversation_id: currentChat.id, content });
+                await apiCall('/api/send-private-message', 'POST', { conversation_id: currentChat.id, content, quote: quoteData });
             }
             messageInput.value = '';
             if (currentChat.type === 'room') await loadMessages(currentChat.id, 'room');
@@ -511,22 +571,19 @@
         onlinePolling = setInterval(() => loadOnlineUsers(), 5000);
     }
 
-    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-
-    // 渲染导航
+    // 导航
     function renderNavUnlogged() {
         navLinks.innerHTML = `<span style="color:#aaa;">未登录</span>`;
     }
     function renderNavLogged() {
         navLinks.innerHTML = `
-            <span style="margin-right:auto;">👤 ${currentUser?.username}</span>
+            <span style="margin-right:auto;">👤 ${currentUser?.username} ${isAdmin ? '<span class="admin-badge">admin</span>' : ''}</span>
             <button id="settingsBtn" class="nav-btn">⚙️ 设置</button>
             <button id="logoutNavBtn" class="nav-btn">🚪 退出</button>
         `;
         document.getElementById('settingsBtn')?.addEventListener('click', showSettings);
         document.getElementById('logoutNavBtn')?.addEventListener('click', logout);
     }
-
     async function showSettings() {
         const newPass = prompt('修改密码\n请输入新密码（6-64字符）');
         if (!newPass) return;
@@ -540,6 +597,118 @@
             logout();
         } catch(e) { alert('修改失败：'+e.message); }
     }
+
+    // 管理员后台逻辑（前端UI + 调用后端API，后端需要实现对应端点）
+    adminPanelBtn.onclick = () => {
+        viewAdmin.classList.add('active');
+        viewApp.classList.remove('active');
+        adminAuthDiv.style.display = 'block';
+        adminContent.style.display = 'none';
+        adminPassword.value = '';
+    };
+    closeAdminBtn.onclick = () => {
+        viewAdmin.classList.remove('active');
+        viewApp.classList.add('active');
+    };
+    adminLoginBtn.onclick = async () => {
+        const pwd = adminPassword.value;
+        if(!pwd) return;
+        try {
+            const res = await fetch(API_BASE + '/api/admin/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pwd })
+            });
+            const data = await res.json();
+            if(res.ok && data.success) {
+                adminAuthDiv.style.display = 'none';
+                adminContent.style.display = 'block';
+                loadAdminUsers();
+                loadAdminRooms();
+            } else {
+                adminAuthError.innerText = '密码错误';
+            }
+        } catch(e) { adminAuthError.innerText = '验证失败'; }
+    };
+    async function loadAdminUsers() {
+        const users = await adminApiCall('/api/admin/users', 'GET');
+        const container = document.getElementById('adminUserList');
+        container.innerHTML = users.map(u => `
+            <div class="flex-between" style="margin-bottom: 8px;">
+                <div>${escapeHtml(u.username)} (${u.user_id}) ${u.is_admin ? '[ADMIN]' : ''}</div>
+                <div>
+                    <button class="admin-mute-btn" data-id="${u.user_id}" data-muted="${u.is_muted}">${u.is_muted ? '解除禁言' : '禁言'}</button>
+                    <button class="admin-deluser-btn" data-id="${u.user_id}">删除用户</button>
+                </div>
+            </div>
+        `).join('');
+        document.querySelectorAll('.admin-mute-btn').forEach(btn => {
+            btn.onclick = async () => {
+                const userId = btn.dataset.id;
+                const muted = btn.dataset.muted === 'true';
+                await adminApiCall('/api/admin/toggle-mute', 'POST', { user_id: userId, mute: !muted });
+                loadAdminUsers();
+            };
+        });
+        document.querySelectorAll('.admin-deluser-btn').forEach(btn => {
+            btn.onclick = async () => {
+                if(confirm('永久删除用户及其所有数据？')) {
+                    await adminApiCall('/api/admin/delete-user', 'POST', { user_id: btn.dataset.id });
+                    loadAdminUsers();
+                }
+            };
+        });
+    }
+    async function loadAdminRooms() {
+        const rooms = await adminApiCall('/api/admin/rooms', 'GET');
+        const container = document.getElementById('adminRoomList');
+        container.innerHTML = rooms.map(r => `
+            <div class="flex-between" style="margin-bottom: 8px;">
+                <div>${escapeHtml(r.room_name)} (ID:${r.room_id}) 创建者:${r.creator_id}</div>
+                <button class="admin-delroom-btn" data-id="${r.room_id}">删除房间</button>
+            </div>
+        `).join('');
+        document.querySelectorAll('.admin-delroom-btn').forEach(btn => {
+            btn.onclick = async () => {
+                if(confirm('删除房间会清空所有消息和成员')) {
+                    await adminApiCall('/api/admin/delete-room', 'POST', { room_id: btn.dataset.id });
+                    loadAdminRooms();
+                }
+            };
+        });
+    }
+    document.getElementById('cleanMessagesBtn').onclick = async () => {
+        const days = parseInt(document.getElementById('cleanDays').value);
+        if(isNaN(days)) return;
+        await adminApiCall('/api/admin/clean-messages', 'POST', { days });
+        alert('清理完成');
+    };
+    document.getElementById('deleteSingleMsgBtn').onclick = async () => {
+        const msgId = document.getElementById('deleteMsgId').value;
+        if(!msgId) return;
+        await adminApiCall('/api/admin/delete-message', 'POST', { message_id: msgId });
+        alert('已删除');
+    };
+    document.getElementById('grantAdminBtn').onclick = async () => {
+        const targetId = document.getElementById('grantUserId').value;
+        if(!targetId) return;
+        await adminApiCall('/api/admin/grant-admin', 'POST', { target_user_id: targetId });
+        alert('已授予管理员权限');
+        loadAdminUsers();
+    };
+    // tabs
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const tab = btn.dataset.tab;
+            document.querySelectorAll('.admin-tab').forEach(div => div.style.display = 'none');
+            if(tab === 'users') document.getElementById('adminTabUsers').style.display = 'block';
+            if(tab === 'rooms') document.getElementById('adminTabRooms').style.display = 'block';
+            if(tab === 'clean') document.getElementById('adminTabClean').style.display = 'block';
+            if(tab === 'grant') document.getElementById('adminTabGrant').style.display = 'block';
+        };
+    });
 
     // 登录注册事件
     showLoginBtn.onclick = () => { loginFormDiv.style.display = 'block'; registerFormDiv.style.display = 'none'; showLoginBtn.classList.add('active'); showRegisterBtn.classList.remove('active'); };
@@ -571,7 +740,7 @@
             await loadProfile();
         } catch(e) { showError(regError, e.message); }
     };
-    closeChatBtn.onclick = () => { currentChat = null; chatTitleSpan.innerText = '💬 未选择聊天'; messageArea.innerHTML = '<div style="text-align:center; padding:2rem;">选择左侧房间或用户开始聊天</div>'; };
+    closeChatBtn.onclick = () => { currentChat = null; chatTitleSpan.innerText = '💬 未选择聊天'; messageArea.innerHTML = '<div style="text-align:center; padding:2rem;">选择左侧房间或用户开始聊天</div>'; announcementDiv.style.display = 'none'; };
     sendMsgBtn.onclick = sendMessage;
     messageInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
     createRoomBtn.onclick = async () => {
@@ -582,9 +751,7 @@
         loadRooms();
     };
 
-    // 初始化检查token
     if (currentToken) {
-        currentToken = localStorage.getItem('webcom_token');
         (async () => {
             try {
                 await apiCall('/api/profile', 'GET');
