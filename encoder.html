@@ -3,8 +3,8 @@
 
 <head>
 <script>
-(async()=>{
-  // 模块授权验证 – 使用完整 Worker 地址
+(async () => {
+  // 模块授权验证 – 使用正确的后端地址和模块名
   const API_BASE = 'https://mg-secret-vault.mgjack13.workers.dev';
   try {
     const resp = await fetch(`${API_BASE}/api/check-module?module=ENCODER`, {
@@ -13,14 +13,14 @@
     const data = await resp.json();
     if (!data.allowed) {
       alert('Please activate your license.');
-      // 跳转到首页（当前路径为 /visual-transmission/encoder.html，首页在上级目录）
-      location.href = '../index.html';
+      // 跳转到 visual-transmission 子目录下的首页
+      location.href = 'index.html';
       return;
     }
   } catch (err) {
     console.error('License verification error:', err);
     alert('License verification failed.');
-    location.href = '../index.html';
+    location.href = 'index.html';
   }
 })();
 </script>
