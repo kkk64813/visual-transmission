@@ -88,9 +88,14 @@
         .search-highlight { background-color: #ff8c00; color: black; padding: 0 2px; border-radius: 4px; font-weight: bold; }
         .search-bar { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
         .search-bar input { flex: 1; padding: 0.4rem 0.8rem; }
-        button, .nav-btn, .admin-tab-btn, #langSwitchBtn, #closeChatBtn, #settingsMenuBtn, #clearChatBtn {
-            font-weight: 500;
-        }
+        .log-entry { border-bottom: 1px solid #333; padding: 8px 0; font-size: 0.8rem; }
+        .log-time { color: #ffaa33; cursor: help; }
+        .log-action { display: inline-block; padding: 2px 6px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin: 0 4px; }
+        .log-action-danger { background: rgba(255,80,80,0.2); color: #ff8080; }
+        .log-action-warning { background: rgba(255,180,80,0.2); color: #ffb060; }
+        .log-action-info { background: rgba(80,180,255,0.2); color: #80ccff; }
+        .copy-ip-btn { background: none; border: none; color: #ffaa33; cursor: pointer; font-size: 0.7rem; margin-left: 6px; }
+        .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
     </style>
 </head>
 <body>
@@ -196,7 +201,7 @@
 
     <!-- 管理员后台视图 -->
     <div id="view-admin" class="view" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 1000; overflow: auto; padding: 2rem;">
-        <div class="card" style="max-width: 1100px; margin: 2rem auto; background: rgba(0,0,0,0.95);">
+        <div class="card" style="max-width: 1200px; margin: 2rem auto; background: rgba(0,0,0,0.95);">
             <div class="flex-between">
                 <h2 data-i18n="adminPanelTitle">🔧 管理后台</h2>
                 <button id="closeAdminBtn" style="background: none; border:1px solid #ff8c00; color:#ffcc80;" data-i18n="closeBtn">关闭</button>
@@ -226,17 +231,51 @@
                     <button id="deleteSingleMsgBtn" data-i18n="deleteBtn">删除</button>
                 </div>
                 <div id="adminTabGrant" class="admin-tab" style="display: none;">
-                    <h4 data-i18n="grantDesc">授予管理员权限</h4>
+                    <h4 data-i18n="grantDesc">授予/取消管理员权限</h4>
                     <input type="text" id="grantUserId" placeholder="用户ID">
                     <button id="grantAdminBtn" data-i18n="grantBtn">授予</button>
+                    <button id="revokeAdminBtn" data-i18n="revokeBtn">取消权限</button>
                 </div>
                 <div id="adminTabLogs" class="admin-tab" style="display: none;">
                     <h4 data-i18n="logs">操作日志</h4>
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                        <input type="text" id="logFilterUserId" placeholder="筛选用户ID" style="flex:1;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <input type="text" id="logFilterUserId" placeholder="筛选用户ID" style="flex:1; min-width:120px;">
+                        <select id="logFilterAction" style="padding:0.5rem;">
+                            <option value="">全部操作</option>
+                            <option value="login">登录</option>
+                            <option value="register">注册</option>
+                            <option value="send_message">发送群消息</option>
+                            <option value="send_private_message">发送私聊</option>
+                            <option value="create_room">创建房间</option>
+                            <option value="join_room">加入房间</option>
+                            <option value="leave_room">离开房间</option>
+                            <option value="change_password">修改密码</option>
+                            <option value="mute_user">禁言用户</option>
+                            <option value="unmute_user">解除禁言</option>
+                            <option value="grant_admin">授予管理员</option>
+                            <option value="revoke_admin">取消管理员</option>
+                            <option value="delete_user">删除用户</option>
+                            <option value="delete_room">删除房间</option>
+                            <option value="delete_message">删除消息</option>
+                            <option value="clear_room_messages">清空群聊</option>
+                            <option value="clear_private_messages">清空私聊</option>
+                            <option value="clean_messages">批量清理消息</option>
+                            <option value="change_admin_password">修改管理员密码</option>
+                            <option value="delete_logs">删除日志</option>
+                            <option value="set_log_retention">设置日志保留</option>
+                        </select>
+                        <input type="date" id="logStartDate" placeholder="开始日期">
+                        <input type="date" id="logEndDate" placeholder="结束日期">
                         <button id="refreshLogsBtn" data-i18n="refreshBtn">刷新</button>
+                        <button id="batchDeleteLogsBtn" data-i18n="batchDeleteBtn" style="background:#b85e00;">批量删除</button>
                     </div>
-                    <div id="logList" style="max-height: 400px; overflow-y: auto; font-size: 0.8rem;"></div>
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                        <label>自动保留天数: <input type="number" id="logRetentionDays" style="width:80px;" value="30"></label>
+                        <button id="saveRetentionBtn" data-i18n="saveBtn">保存</button>
+                        <span id="retentionMsg" class="error-msg"></span>
+                    </div>
+                    <div id="logList" style="max-height: 400px; overflow-y: auto;"></div>
+                    <div class="pagination" id="logPagination"></div>
                 </div>
                 <div id="adminTabSettings" class="admin-tab" style="display: none;">
                     <h4 data-i18n="changeAdminPwd">修改管理员密码</h4>
@@ -262,10 +301,9 @@
     let isAdmin = false;
     let cachedAdminPassword = null;
 
-    // 国际化词库
+    // 国际化词库（完整版）
     const i18n = {
         zh: {
-            // 通用
             loginTab: '登录', registerTab: '注册', loginBtn: '登录 →', registerBtn: '注册 →',
             roomsTitle: '📢 聊天室大厅', adminBtn: '⚙️ 管理', createRoomBtn: '+ 创建',
             onlineUsersTitle: '👥 在线用户', groupChatBadge: '群聊', settingsBtn: '⚙️',
@@ -274,21 +312,21 @@
             adminPanelTitle: '🔧 管理后台', verifyBtn: '验证', userMgmt: '👥 用户管理',
             roomMgmt: '🏠 房间管理', cleanRecords: '🗑️ 清理记录', grantAdmin: '👑 权限下发',
             cleanOld: '清理旧消息', cleanBtn: '清除', deleteSingle: '删除单条消息',
-            deleteBtn: '删除', grantDesc: '授予管理员权限', grantBtn: '授予',
+            deleteBtn: '删除', grantDesc: '授予/取消管理员权限', grantBtn: '授予', revokeBtn: '取消权限',
             searchPlaceholder: '🔍 搜索当前聊天消息...', messagePlaceholder: '输入消息... (点击消息引用)',
-            noChat: '选择左侧房间或用户开始聊天', newMsgNotif: '🔔 开启通知，新消息不错过',
+            noChat: '未选择聊天', newMsgNotif: '🔔 开启通知，新消息不错过',
             enableBtn: '开启', copySuccess: '复制成功', joinRoomFirst: '请先加入房间',
             sendFailed: '发送失败', passwordChanged: '密码修改成功，请重新登录',
             changePwdFail: '修改失败：', needLogin: '登录过期', needAdminPwd: '需要管理员密码',
             muteUser: '禁言', unmuteUser: '解除禁言', deleteUserConfirm: '永久删除用户及其所有数据？',
             deleteRoomConfirm: '删除房间会清空所有消息和成员', cleanDone: '清理完成',
-            msgDeleted: '已删除', granted: '已授予管理员权限', invalidRoomName: '无效的房间名',
-            roomCreated: '房间已创建', joined: '已加入', left: '已退出',
+            msgDeleted: '已删除', granted: '已授予管理员权限', revoked: '已取消管理员权限',
+            invalidRoomName: '无效的房间名', roomCreated: '房间已创建', joined: '已加入', left: '已退出',
             announcementUpdated: '公告已更新', messageTooLong: '消息过长',
             clearChatConfirm: '确认清除当前聊天所有记录？不可恢复。',
             homeBtn: '🏠 首页', logoutBtn: '🚪 退出', changePwdPrompt: '修改密码', confirmPwdPrompt: '确认密码', currentPwdPrompt: '当前密码',
-            logs: '操作日志', adminSettings: '管理员设置', changeAdminPwd: '修改管理员密码', oldPwd: '当前密码', newPwd: '新密码', confirmNewPwd: '确认新密码',
-            refreshBtn: '刷新', changeBtn: '修改密码', clearChatBtn: '🗑️ 清除记录',
+            logs: '操作日志', adminSettings: '管理员设置', changeAdminPwd: '修改管理员密码',
+            refreshBtn: '刷新', changeBtn: '修改', clearChatBtn: '🗑️ 清除记录',
             joinedBadge: '✓ 已加入', readCount: '已读', replyPrefix: '↳ 回复', announcementLabel: '📢 公告：',
             createdBy: '创建者:', deleteRoom: '删除', deleteUser: '删除', adminTag: 'admin',
             confirmClearChat: '确认清除当前聊天所有记录？不可恢复。', passwordMismatch: '两次密码不一致',
@@ -297,7 +335,9 @@
             invalidAdminPwd: '密码错误', verifyFailed: '验证失败', clearFailed: '清除失败',
             enterRoomName: '房间名称', enterRoomDesc: '房间描述（可选）',
             enterNewPassword: '请输入新密码（6-64字符）', enterCurrentPassword: '请输入当前密码',
-            enterAdminPassword: '需要管理员密码'
+            enterAdminPassword: '需要管理员密码', batchDeleteBtn: '批量删除', saveBtn: '保存',
+            copyIp: '复制IP', ipCopied: 'IP已复制', viewUserLogs: '查看该用户日志',
+            loading: '加载中...', noMore: '没有更多了'
         },
         en: {
             loginTab: 'Login', registerTab: 'Register', loginBtn: 'Login →', registerBtn: 'Register →',
@@ -308,20 +348,20 @@
             adminPanelTitle: '🔧 Admin Panel', verifyBtn: 'Verify', userMgmt: '👥 User Mgmt',
             roomMgmt: '🏠 Room Mgmt', cleanRecords: '🗑️ Clean Logs', grantAdmin: '👑 Grant Admin',
             cleanOld: 'Clean old messages', cleanBtn: 'Clean', deleteSingle: 'Delete single message',
-            deleteBtn: 'Delete', grantDesc: 'Grant admin privileges', grantBtn: 'Grant',
+            deleteBtn: 'Delete', grantDesc: 'Grant/Revoke Admin', grantBtn: 'Grant', revokeBtn: 'Revoke',
             searchPlaceholder: '🔍 Search current chat...', messagePlaceholder: 'Type message... (click to quote)',
-            noChat: 'Select a room or user to start chatting', newMsgNotif: '🔔 Enable notifications for new messages',
+            noChat: 'No chat selected', newMsgNotif: '🔔 Enable notifications for new messages',
             enableBtn: 'Enable', copySuccess: 'Copied', joinRoomFirst: 'Please join the room first',
             sendFailed: 'Send failed', passwordChanged: 'Password changed, please login again',
             changePwdFail: 'Change failed: ', needLogin: 'Session expired', needAdminPwd: 'Admin password required',
             muteUser: 'Mute', unmuteUser: 'Unmute', deleteUserConfirm: 'Permanently delete user and all data?',
             deleteRoomConfirm: 'Deleting room will erase all messages and members', cleanDone: 'Cleaned',
-            msgDeleted: 'Deleted', granted: 'Admin granted', invalidRoomName: 'Invalid room name',
-            roomCreated: 'Room created', joined: 'Joined', left: 'Left',
+            msgDeleted: 'Deleted', granted: 'Admin granted', revoked: 'Admin revoked',
+            invalidRoomName: 'Invalid room name', roomCreated: 'Room created', joined: 'Joined', left: 'Left',
             announcementUpdated: 'Announcement updated', messageTooLong: 'Message too long',
             clearChatConfirm: 'Clear all messages in this chat? Irreversible.',
             homeBtn: '🏠 Home', logoutBtn: '🚪 Logout', changePwdPrompt: 'Change password', confirmPwdPrompt: 'Confirm password', currentPwdPrompt: 'Current password',
-            logs: 'Logs', adminSettings: 'Admin Settings', changeAdminPwd: 'Change Admin Password', oldPwd: 'Current Password', newPwd: 'New Password', confirmNewPwd: 'Confirm New Password',
+            logs: 'Logs', adminSettings: 'Admin Settings', changeAdminPwd: 'Change Admin Password',
             refreshBtn: 'Refresh', changeBtn: 'Change', clearChatBtn: '🗑️ Clear',
             joinedBadge: '✓ Joined', readCount: 'read', replyPrefix: '↳ Replied', announcementLabel: '📢 Announcement:',
             createdBy: 'Created by:', deleteRoom: 'Delete', deleteUser: 'Delete', adminTag: 'admin',
@@ -331,13 +371,14 @@
             invalidAdminPwd: 'Wrong password', verifyFailed: 'Verification failed', clearFailed: 'Clear failed',
             enterRoomName: 'Room name', enterRoomDesc: 'Room description (optional)',
             enterNewPassword: 'Enter new password (6-64 chars)', enterCurrentPassword: 'Enter current password',
-            enterAdminPassword: 'Admin password required'
+            enterAdminPassword: 'Admin password required', batchDeleteBtn: 'Batch Delete', saveBtn: 'Save',
+            copyIp: 'Copy IP', ipCopied: 'IP copied', viewUserLogs: 'View user logs',
+            loading: 'Loading...', noMore: 'No more'
         }
     };
     let currentLang = localStorage.getItem('webcom_lang') || 'zh';
     function t(key) { return i18n[currentLang][key] || key; }
 
-    // 更新所有带 data-i18n 属性的元素
     function updateStaticTexts() {
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
@@ -354,39 +395,29 @@
         currentLang = lang;
         localStorage.setItem('webcom_lang', lang);
         updateStaticTexts();
-        // 刷新动态内容
         if (currentUser) {
             renderNavLogged();
             loadRooms();
             loadOnlineUsers();
-            if (currentChat) {
-                loadMessages(currentChat.id, currentChat.type);
-            }
-            // 如果管理员后台打开，刷新其中的内容
+            if (currentChat) loadMessages(currentChat.id, currentChat.type);
             if (viewAdmin.classList.contains('active') && adminContent.style.display === 'block') {
                 loadAdminUsers();
                 loadAdminRooms();
-                loadAdminLogs();
+                refreshLogs();
             }
         }
     }
 
-    // 获取当前语言下的提示字符串
-    function getPromptMessage(key) { return t(key); }
-
-    // 初始化语言
     document.getElementById('languageSelect').value = currentLang;
     document.getElementById('languageSelect').addEventListener('change', (e) => setLanguage(e.target.value));
     updateStaticTexts();
-
-    // 导航栏语言切换按钮
     document.getElementById('langSwitchBtn').onclick = () => {
         const newLang = currentLang === 'zh' ? 'en' : 'zh';
         setLanguage(newLang);
         document.getElementById('languageSelect').value = newLang;
     };
 
-    // 通知相关
+    // 通知相关（略，保持原有）
     let notificationPermissionGranted = false;
     let lastSeenTimestamps = {};
     let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
@@ -480,6 +511,14 @@
 
     function showError(div, msg) { div.innerText = msg; setTimeout(() => div.innerText = '', 3000); }
     function formatTime(ts) { return new Date(ts * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+    function formatRelativeTime(ts) {
+        const now = Date.now() / 1000;
+        const diff = now - ts;
+        if (diff < 60) return `${Math.floor(diff)}秒前`;
+        if (diff < 3600) return `${Math.floor(diff/60)}分钟前`;
+        if (diff < 86400) return `${Math.floor(diff/3600)}小时前`;
+        return new Date(ts*1000).toLocaleDateString();
+    }
     function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
 
     async function apiCall(path, method, body = null, needAuth = true, adminPass = null) {
@@ -494,8 +533,14 @@
     }
 
     async function adminApiCall(path, method, body = null) {
+        // 先尝试更新 isAdmin 状态（如果当前会话已过期但仍有 isAdmin 标记）
         if (isAdmin) {
-            return apiCall(path, method, body, true);
+            try {
+                return await apiCall(path, method, body, true);
+            } catch(e) {
+                if (e.message.includes('401')) isAdmin = false;
+                else throw e;
+            }
         }
         let password = cachedAdminPassword;
         if (!password) {
@@ -507,7 +552,7 @@
             cachedAdminPassword = password;
             return result;
         } catch (e) {
-            if (e.message.includes('401') || e.message.includes('密码') || e.message.includes('password')) {
+            if (e.message.includes('401') || e.message.includes('密码')) {
                 cachedAdminPassword = null;
                 throw e;
             }
@@ -538,17 +583,19 @@
         loadRooms();
         loadOnlineUsers();
         startPolling();
+        // 检查管理员状态
         try {
             await apiCall('/api/admin/check', 'GET');
             isAdmin = true;
             renderNavLogged();
         } catch(e) { isAdmin = false; }
         requestNotificationPermission();
+        // 初始化私聊会话的最后消息时间
         try {
-            const rooms = await apiCall('/api/list-rooms', 'GET');
-            for (const r of rooms.filter(r => r.joined)) {
-                const msgs = await apiCall(`/api/messages?room_id=${r.room_id}&limit=1`, 'GET');
-                if (msgs.length) lastSeenTimestamps[`room_${r.room_id}`] = msgs[0].created_at;
+            const convs = await apiCall('/api/conversations', 'GET');
+            for (const conv of convs) {
+                const msgs = await apiCall(`/api/private-messages?conversation_id=${conv.conversation_id}&limit=1`, 'GET');
+                if (msgs.length) lastSeenTimestamps[`private_${conv.conversation_id}`] = msgs[0].created_at;
             }
         } catch(e) {}
     }
@@ -868,14 +915,14 @@
     });
 
     function renderNavUnlogged() {
-        navLinks.innerHTML = `<span style="color:#aaa;">${t('notLoggedIn') || 'Not logged in'}</span>`;
+        navLinks.innerHTML = `<span style="color:#aaa;">Not logged in</span>`;
     }
     function renderNavLogged() {
         navLinks.innerHTML = `
             <span style="margin-right:auto;">👤 ${currentUser?.username} ${isAdmin ? `<span class="admin-badge">${t('adminTag')}</span>` : ''}</span>
-            <button id="homeBtn" class="nav-btn">🏠 ${t('homeBtn')}</button>
-            <button id="settingsBtn" class="nav-btn">⚙️ ${t('settingsBtn')}</button>
-            <button id="logoutNavBtn" class="nav-btn">🚪 ${t('logoutBtn')}</button>
+            <button id="homeBtn" class="nav-btn">${t('homeBtn')}</button>
+            <button id="settingsBtn" class="nav-btn">${t('settingsBtn')}</button>
+            <button id="logoutNavBtn" class="nav-btn">${t('logoutBtn')}</button>
         `;
         document.getElementById('homeBtn')?.addEventListener('click', () => window.location.href = 'https://kkk64813.github.io/visual-transmission/index.html');
         document.getElementById('settingsBtn')?.addEventListener('click', showSettings);
@@ -896,11 +943,23 @@
         } catch(e) { alert(t('changePwdFail')+e.message); }
     }
 
-    adminPanelBtn.onclick = () => {
+    // 管理员后台逻辑
+    adminPanelBtn.onclick = async () => {
+        // 先更新管理员状态
+        try {
+            await apiCall('/api/admin/check', 'GET');
+            isAdmin = true;
+            renderNavLogged();
+        } catch(e) { isAdmin = false; }
         viewAdmin.classList.add('active');
         viewApp.classList.remove('active');
-        adminAuthDiv.style.display = 'block';
-        adminContent.style.display = 'none';
+        adminAuthDiv.style.display = isAdmin ? 'none' : 'block';
+        adminContent.style.display = isAdmin ? 'block' : 'none';
+        if (isAdmin) {
+            loadAdminUsers();
+            loadAdminRooms();
+            refreshLogs();
+        }
         adminPassword.value = '';
     };
     closeAdminBtn.onclick = () => {
@@ -923,7 +982,7 @@
                 adminContent.style.display = 'block';
                 loadAdminUsers();
                 loadAdminRooms();
-                loadAdminLogs();
+                refreshLogs();
             } else {
                 adminAuthError.innerText = t('invalidAdminPwd');
             }
@@ -945,7 +1004,7 @@
         document.querySelectorAll('.admin-mute-btn').forEach(btn => {
             btn.onclick = async () => {
                 const userId = btn.dataset.id;
-                const muted = btn.dataset.muted === 'true';
+                const muted = btn.dataset.muted === '1'; // 注意：数据库中 is_muted 是 0/1，转成字符串后需要正确判断
                 await adminApiCall('/api/admin/toggle-mute', 'POST', { user_id: userId, mute: !muted });
                 loadAdminUsers();
             };
@@ -977,24 +1036,139 @@
             };
         });
     }
-    async function loadAdminLogs() {
+
+    // 日志相关变量
+    let currentLogOffset = 0;
+    let currentLogTotal = 0;
+    let isLoadingLogs = false;
+    async function refreshLogs(resetOffset = true) {
+        if (resetOffset) {
+            currentLogOffset = 0;
+            document.getElementById('logList').innerHTML = '';
+            document.getElementById('logPagination').innerHTML = '';
+        }
+        if (isLoadingLogs) return;
+        isLoadingLogs = true;
         const filterUserId = document.getElementById('logFilterUserId').value;
-        let url = '/api/admin/logs?limit=100';
+        const filterAction = document.getElementById('logFilterAction').value;
+        const startDate = document.getElementById('logStartDate').value;
+        const endDate = document.getElementById('logEndDate').value;
+        let url = `/api/admin/logs?limit=30&offset=${currentLogOffset}`;
         if (filterUserId) url += `&user_id=${encodeURIComponent(filterUserId)}`;
-        const logs = await adminApiCall(url, 'GET');
-        const container = document.getElementById('logList');
-        container.innerHTML = logs.map(l => `
-            <div style="border-bottom:1px solid #333; padding:6px 0; font-size:0.8rem;">
-                <span style="color:#ffaa33;">${new Date(l.created_at*1000).toLocaleString()}</span> 
-                <strong>${escapeHtml(l.username || l.user_id)}</strong> 
-                ${l.action} 
-                ${l.details ? `(${escapeHtml(l.details)})` : ''}
-                <span style="color:#888;"> IP:${l.ip || '?'}</span>
-            </div>
-        `).join('');
+        if (filterAction) url += `&action=${encodeURIComponent(filterAction)}`;
+        if (startDate) url += `&start_date=${Math.floor(new Date(startDate).getTime()/1000)}`;
+        if (endDate) url += `&end_date=${Math.floor(new Date(endDate).getTime()/1000)+86399}`;
+        try {
+            const data = await adminApiCall(url, 'GET');
+            currentLogTotal = data.total;
+            const logs = data.logs;
+            const container = document.getElementById('logList');
+            if (resetOffset) container.innerHTML = '';
+            logs.forEach(l => {
+                const actionClass = getActionClass(l.action);
+                const timeStr = new Date(l.created_at*1000).toLocaleString();
+                const relTime = formatRelativeTime(l.created_at);
+                const logDiv = document.createElement('div');
+                logDiv.className = 'log-entry';
+                logDiv.innerHTML = `
+                    <span class="log-time" title="${timeStr}">${relTime}</span>
+                    <strong>${escapeHtml(l.username || l.user_id)}</strong>
+                    <span class="log-action ${actionClass}">${l.action}</span>
+                    ${l.details ? `(${escapeHtml(l.details)})` : ''}
+                    <span style="color:#888;"> IP:${l.ip || '?'}</span>
+                    <button class="copy-ip-btn" data-ip="${l.ip || ''}" title="${t('copyIp')}">📋</button>
+                    <button class="filter-user-btn" data-user="${l.user_id}" title="${t('viewUserLogs')}">🔍</button>
+                `;
+                container.appendChild(logDiv);
+            });
+            // 添加分页控件
+            const totalPages = Math.ceil(currentLogTotal / 30);
+            const paginationDiv = document.getElementById('logPagination');
+            paginationDiv.innerHTML = '';
+            if (totalPages > 1) {
+                for (let i = 0; i < totalPages; i++) {
+                    const btn = document.createElement('button');
+                    btn.textContent = i+1;
+                    btn.style.padding = '4px 8px';
+                    btn.style.margin = '0 2px';
+                    if (i === currentLogOffset/30) btn.style.background = '#ff8c00';
+                    btn.onclick = () => {
+                        currentLogOffset = i * 30;
+                        refreshLogs(true);
+                    };
+                    paginationDiv.appendChild(btn);
+                }
+            }
+            // 绑定复制IP和筛选用户事件
+            document.querySelectorAll('.copy-ip-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const ip = btn.dataset.ip;
+                    if (ip) {
+                        navigator.clipboard.writeText(ip);
+                        alert(t('ipCopied'));
+                    }
+                };
+            });
+            document.querySelectorAll('.filter-user-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const userId = btn.dataset.user;
+                    document.getElementById('logFilterUserId').value = userId;
+                    refreshLogs(true);
+                };
+            });
+        } catch(e) { console.error(e); }
+        isLoadingLogs = false;
     }
-    document.getElementById('refreshLogsBtn').onclick = () => loadAdminLogs();
-    document.getElementById('logFilterUserId').addEventListener('change', () => loadAdminLogs());
+    function getActionClass(action) {
+        const dangerous = ['delete_user', 'delete_room', 'delete_message', 'clean_messages', 'delete_logs', 'mute_user'];
+        const warning = ['grant_admin', 'revoke_admin', 'change_admin_password'];
+        if (dangerous.includes(action)) return 'log-action-danger';
+        if (warning.includes(action)) return 'log-action-warning';
+        return 'log-action-info';
+    }
+
+    // 批量删除日志
+    document.getElementById('batchDeleteLogsBtn').onclick = async () => {
+        const filterUserId = document.getElementById('logFilterUserId').value;
+        const filterAction = document.getElementById('logFilterAction').value;
+        const startDate = document.getElementById('logStartDate').value;
+        const endDate = document.getElementById('logEndDate').value;
+        if (!confirm('确认删除当前筛选条件下的所有日志？不可恢复。')) return;
+        const body = {};
+        if (filterUserId) body.user_id = filterUserId;
+        if (filterAction) body.action = filterAction;
+        if (startDate) body.start_date = Math.floor(new Date(startDate).getTime()/1000);
+        if (endDate) body.end_date = Math.floor(new Date(endDate).getTime()/1000)+86399;
+        try {
+            const result = await adminApiCall('/api/admin/delete-logs', 'POST', body);
+            alert(`已删除 ${result.deleted} 条日志`);
+            refreshLogs(true);
+        } catch(e) { alert('删除失败：'+e.message); }
+    };
+
+    // 日志保留天数设置
+    async function loadRetentionDays() {
+        try {
+            const data = await adminApiCall('/api/admin/log-retention', 'GET');
+            document.getElementById('logRetentionDays').value = data.days;
+        } catch(e) { console.warn(e); }
+    }
+    document.getElementById('saveRetentionBtn').onclick = async () => {
+        const days = parseInt(document.getElementById('logRetentionDays').value);
+        if (isNaN(days) || days < 1) return alert('请输入有效的天数');
+        try {
+            await adminApiCall('/api/admin/log-retention', 'POST', { days });
+            document.getElementById('retentionMsg').innerText = '已保存';
+            setTimeout(() => document.getElementById('retentionMsg').innerText = '', 3000);
+        } catch(e) { alert('保存失败：'+e.message); }
+    };
+    document.getElementById('refreshLogsBtn').onclick = () => refreshLogs(true);
+    document.getElementById('logFilterUserId').addEventListener('change', () => refreshLogs(true));
+    document.getElementById('logFilterAction').addEventListener('change', () => refreshLogs(true));
+    document.getElementById('logStartDate').addEventListener('change', () => refreshLogs(true));
+    document.getElementById('logEndDate').addEventListener('change', () => refreshLogs(true));
 
     document.getElementById('cleanMessagesBtn').onclick = async () => {
         const days = parseInt(document.getElementById('cleanDays').value);
@@ -1017,6 +1191,23 @@
         if (targetId === currentUser?.user_id) {
             isAdmin = true;
             renderNavLogged();
+        }
+    };
+    document.getElementById('revokeAdminBtn').onclick = async () => {
+        const targetId = document.getElementById('grantUserId').value;
+        if(!targetId) return;
+        if (targetId === currentUser?.user_id) {
+            if (!confirm('取消自己的管理员权限后，您将无法再进入管理后台，确定吗？')) return;
+        }
+        await adminApiCall('/api/admin/revoke-admin', 'POST', { target_user_id: targetId });
+        alert(t('revoked'));
+        loadAdminUsers();
+        if (targetId === currentUser?.user_id) {
+            isAdmin = false;
+            renderNavLogged();
+            // 关闭管理后台
+            viewAdmin.classList.remove('active');
+            viewApp.classList.add('active');
         }
     };
     document.getElementById('changeAdminPwdBtn').onclick = async () => {
@@ -1062,7 +1253,11 @@
             if(tab === 'rooms') document.getElementById('adminTabRooms').style.display = 'block';
             if(tab === 'clean') document.getElementById('adminTabClean').style.display = 'block';
             if(tab === 'grant') document.getElementById('adminTabGrant').style.display = 'block';
-            if(tab === 'logs') { document.getElementById('adminTabLogs').style.display = 'block'; loadAdminLogs(); }
+            if(tab === 'logs') { 
+                document.getElementById('adminTabLogs').style.display = 'block'; 
+                loadRetentionDays();
+                refreshLogs(true); 
+            }
             if(tab === 'settings') document.getElementById('adminTabSettings').style.display = 'block';
         };
     });
